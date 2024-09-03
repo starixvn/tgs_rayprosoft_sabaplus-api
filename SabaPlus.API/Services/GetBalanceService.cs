@@ -11,28 +11,31 @@ public class GetBalanceService(ISabaPlusApiMessagePublishHandler messagePublishe
 	{
 		try
 		{
-			Console.WriteLine(query.message);
-			var res = new GetBalanceResult("0", query.message.UserId, 100, DateTime.UtcNow.ToString());
+			var res = new GetBalanceResult
+			{
+				Seq = Guid.NewGuid().ToString(),
+				Payload = new GetBalanceResponsePayload(100),
+				TimeStamp = DateTime.UtcNow,
+			};
 
 			await messagePublisher.LogApi(new ApiLogMessage()
 			{
-				Key = query.key,
-				Action = query.message.Action,
+				Action = nameof(GetBalanceRequest),
 				Request = query,
 				Response = res
 			}, cancellationToken);
-
-			//TO DO
-			//#1. Check Valid UserId
-			//#2. Get Actual Balance
-			//#3. Define GetBalance Error Codes
 
 			return res;
 		}
 		catch (Exception ex)
 		{
 			Console.Write(ex.ToString());
-			return new GetBalanceResult("203", null, null, null, "Account not existed");
+			return new GetBalanceResult
+			{
+				Seq = Guid.NewGuid().ToString(),
+				ErrorCode = 1,
+				ErrorMessage = "Account does not exist"
+			};
 		}
 	}
 }

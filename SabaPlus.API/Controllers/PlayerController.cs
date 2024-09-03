@@ -32,10 +32,10 @@ namespace SabaPlus.API.Controllers
 			return result;
 		}
 
-		[HttpPost("settle")]
-		public async ValueTask<SettleResult> Settle(
-			[FromServices] IGetService<SettleRequest, SettleResult> service,
-			SettleRequest source
+		[HttpPost("endgame")]
+		public async ValueTask<EndGameResult> EndGame(
+			[FromServices] IGetService<EndGameRequest, EndGameResult> service,
+			EndGameRequest source
 			)
 		{
 			var result = await service.GetAsync(source, cancellationToken: HttpContext.RequestAborted).ConfigureAwait(false);

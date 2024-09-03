@@ -2,4 +2,4 @@
 
 namespace SabaPlus.Core.ApplicationServices;
 
-public record ApiLogsCommand(string Key, string Action, object Req, object Res);
+public record ApiLogsCommand(string Action, object Req, object Res);

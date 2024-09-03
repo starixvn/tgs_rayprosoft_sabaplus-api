@@ -1,4 +1,6 @@
-﻿using SabaPlus.API.Messages;
+﻿using System.Security.Cryptography;
+using System.Transactions;
+using SabaPlus.API.Messages;
 using SabaPlus.API.Models.PlaceBet;
 using SabaPlus.Common;
 using Tgs.ServiceUtility;
@@ -11,37 +13,44 @@ public class PlaceBetGetService(ISabaPlusApiMessagePublishHandler messagePublish
 	{
 		try
 		{
-			var res = new PlaceBetResult("0", "4200500_2331", "1988754", "");
+			var res = new PlaceBetResult
+			{
+				Seq = Guid.NewGuid().ToString(),
+				TimeStamp = DateTime.Now,
+				Payload = new PlaceBetResponsePayload("11111", 123, new PlaceBetDataSet[] {
+				new PlaceBetDataSet {
+					TicketNo = "2323",
+					GameId = "game id",
+					GameRoundId = " game round id",
+					TransactionId = "transaction id",
+					Stake = 12,
+					ActualStake = 11,
+					Odds = 0.98m,
+					BetChoice = "choice 1",
+					TableCode = " table 1"
+				} })
+			};
 
 			var apiLogMessage = new ApiLogMessage()
 			{
-				Key = query.key,
-				Action = query.message.Action,
+				Action = "PlaceBet",
 				Request = query,
 				Response = res
 			};
 
 			await messagePublisher.LogApi(new ApiLogMessage()
 			{
-				Key = query.key,
-				Action = query.message.Action,
+				Action = apiLogMessage.Action,
 				Request = query,
 				Response = res
 			}, cancellationToken);
-
-			//TO DO
-			//#1. Check Valid Request
-			//#2. Check Valid Bet Amount
-			//#3. Check Valid Balance
-			//#4. Define PlaceBet Error Codes
-			//#5. Schedule to trigger CheckTicketStatus if not receive ConfirmBet after 10 mins
 
 			return res;
 		}
 		catch (Exception ex)
 		{
 			Console.Write(ex.ToString());
-			return new PlaceBetResult("1", "", "", "");
+			return new PlaceBetResult { ErrorCode = 1, ErrorMessage= "Place bet failed"};
 		}
 	}
 }

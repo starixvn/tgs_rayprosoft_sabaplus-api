@@ -23,7 +23,6 @@ public class ApiLogsMessageHandler(
 				Subject = subject,
 				Data = new
 				{
-					message.Key,
 					message.Action,
 					message.Request,
 					message.Response,
@@ -31,6 +30,6 @@ public class ApiLogsMessageHandler(
 				Message = "This message receiving handler."
 			}));
 
-		return logCommand.ExecuteAsync(new ApiLogsCommand(message.Key, message.Action, message.Request, message.Response));
+		return logCommand.ExecuteAsync(new ApiLogsCommand(message.Action, message.Request, message.Response));
 	}
 }

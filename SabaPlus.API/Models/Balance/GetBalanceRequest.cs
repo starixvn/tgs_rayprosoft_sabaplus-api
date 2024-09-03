@@ -1,6 +1,5 @@
 ﻿namespace SabaPlus.API.Models.Balance;
 
-public record GetBalanceRequest(
-	   string key,
-	   GetBalanceData message
-	   );
+public class GetBalanceRequest : OperatorRequest<GetBalanceRequestPayload>;
+
+public record GetBalanceRequestPayload (string OperatorCustId, string WalletSideToken, string GameType);

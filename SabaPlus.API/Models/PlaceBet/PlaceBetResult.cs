@@ -1,9 +1,6 @@
 ﻿namespace SabaPlus.API.Models.PlaceBet
 {
-    public record PlaceBetResult(
-        string status,
-        string? refId = null,
-        string? licenseeTxId = null,
-        string? msg = null
-        );
+    public class PlaceBetResult : OperatorResponse<PlaceBetResponsePayload>;
+
+	public record PlaceBetResponsePayload(string OperatorCustId, decimal Balance, PlaceBetDataSet[] BetDataSet);
 }
