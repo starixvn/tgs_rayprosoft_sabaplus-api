@@ -9,6 +9,6 @@ public class SabaPlusMessagePublishHandler(IMessageSender messageSender) : ISaba
 {
 	public async ValueTask LogApi(ApiLogMessage mesage, CancellationToken cancellationToken = default)
 	{
-		await messageSender.PublishAsync(subject: SabaNatsConst.ApiLogsPublish, data: JsonSerializer.Serialize(mesage), cancellationToken);
+		await messageSender.PublishAsync(subject: Constants.ApiLogsExchange, data: JsonSerializer.Serialize(mesage), cancellationToken);
 	}
 }

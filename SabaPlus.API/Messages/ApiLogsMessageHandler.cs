@@ -1,20 +1,19 @@
 ﻿using System.Text;
 using System.Text.Json;
 using SabaPlus.Common;
-using SabaPlus.Core;
 using SabaPlus.Core.ApplicationServices;
+using Tgs.ServiceUtility;
 using Valhalla.MessageQueue;
 
 namespace SabaPlus.API.Messages;
 
 public class ApiLogsMessageHandler(
 	ILogger<ApiLogsMessageHandler> logger,
-	IApiLogsDispatcher dispatcher) : IMessageHandler<ReadOnlyMemory<byte>>
+	ICommandService<ApiLogsCommand> logCommand) : IMessageHandler<string>
 {
-	public ValueTask HandleAsync(string subject, ReadOnlyMemory<byte> data, IEnumerable<MessageHeaderValue>? headerValues, CancellationToken cancellationToken = default)
+	public ValueTask HandleAsync(string subject, string data, IEnumerable<MessageHeaderValue>? headerValues, CancellationToken cancellationToken = default)
 	{
-		var json = Encoding.UTF8.GetString(data.Span);
-		var message = JsonSerializer.Deserialize<ApiLogMessage>(json)
+		var message = JsonSerializer.Deserialize<ApiLogMessage>(data)
 			?? throw new NullReferenceException("The request data resolves to a null value");
 
 		logger.LogInformation("{logInformation}",
@@ -32,8 +31,6 @@ public class ApiLogsMessageHandler(
 				Message = "This message receiving handler."
 			}));
 
-		return dispatcher.PushCommandAsync(
-			command: new ApiLogsCommand(message.Key, message.Action, message.Request, message.Response),
-			cancellationToken: cancellationToken);
+		return logCommand.ExecuteAsync(new ApiLogsCommand(message.Key, message.Action, message.Request, message.Response));
 	}
 }

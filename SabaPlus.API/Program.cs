@@ -26,17 +26,10 @@ builder.Services
 	.AddApiLogsRepositories(mongoClientResolver: (sp) => sp.GetRequiredService<MongoDBConnectionManager>().MongoClient);
 
 builder.Services
-	.AddKeyedSingleton("Nats", (sp, _) => new NatsConnection(NatsOpts.Default with
-	{
-		Url = builder.Configuration.GetConnectionString("Nats")!,
-		SerializerRegistry = TgsNatsSerializerRegistration.Default
-	}))
 	.AddMessageQueue()
-	.AddNatsMessageQueue(config => config
-		.ConfigureResolveConnection(sp => sp.GetRequiredKeyedService<NatsConnection>("Nats"))
-		 .AddHandler<ApiLogsMessageHandler>(SabaNatsConst.ApiLogsPublish, SabaNatsConst.ApiLogsPublish))
-	 .ClearAllExchanges()
-	 .AddNatsGlobPatternExchange(SabaNatsConst.ApiLogsPublish);
+	.AddInProcessMessageQueue(configuration => 
+		configuration.AddHandler<ApiLogsMessageHandler>(Constants.ApiLogsExchange))
+	.AddInProcessGlobPatternExchange(Constants.InprocessGlobExchange);
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
