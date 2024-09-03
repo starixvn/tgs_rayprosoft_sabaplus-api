@@ -76,7 +76,7 @@ builder.Services
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (builder.Configuration.GetValue<string>("Env") == "LOCAL")
 {
 	app.UseSwagger();
 	app.UseSwaggerUI();
