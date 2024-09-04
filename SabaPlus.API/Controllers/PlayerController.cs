@@ -5,6 +5,7 @@ using SabaPlus.API.Models.PlaceBet;
 using SabaPlus.API.Models.PlaceBetAndSettle;
 using SabaPlus.API.Models.PlayerInfo;
 using SabaPlus.API.Models.Settle;
+using SabaPlus.API.Models.VoidGame;
 using Tgs.ServiceUtility;
 
 namespace SabaPlus.API.Controllers
@@ -70,6 +71,16 @@ namespace SabaPlus.API.Controllers
 		public async ValueTask<FreeSpinResult> FreeSpin(
 			[FromServices] IGetService<FreeSpinRequest, FreeSpinResult> service,
 			FreeSpinRequest source)
+		{
+			var result = await service.GetAsync(source, cancellationToken: HttpContext.RequestAborted).ConfigureAwait(false);
+
+			return result;
+		}
+
+		[HttpPost("VoidGame")]
+		public async ValueTask<VoidGameResult> VoidGame(
+		[FromServices] IGetService<VoidGameRequest, VoidGameResult> service,
+		VoidGameRequest source)
 		{
 			var result = await service.GetAsync(source, cancellationToken: HttpContext.RequestAborted).ConfigureAwait(false);
 
