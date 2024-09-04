@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SabaPlus.API.Models.Balance;
+using SabaPlus.API.Models.Bonus;
 using SabaPlus.API.Models.FreeSpin;
 using SabaPlus.API.Models.PlaceBet;
 using SabaPlus.API.Models.PlaceBetAndSettle;
@@ -86,5 +87,16 @@ namespace SabaPlus.API.Controllers
 
 			return result;
 		}
+
+		[HttpPost("Bonus")]
+		public async ValueTask<BonusResult> Bonus(
+			[FromServices] IGetService<BonusRequest, BonusResult> service,
+				BonusRequest source)
+		{
+			var result = await service.GetAsync(source, cancellationToken: HttpContext.RequestAborted).ConfigureAwait(false);
+
+			return result;
+		}
+		
 	}
 }
