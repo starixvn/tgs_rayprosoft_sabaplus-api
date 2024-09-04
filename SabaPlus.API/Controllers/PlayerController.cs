@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SabaPlus.API.Models.Balance;
 using SabaPlus.API.Models.PlaceBet;
+using SabaPlus.API.Models.PlayerInfo;
 using SabaPlus.API.Models.Settle;
 using Tgs.ServiceUtility;
 
@@ -37,6 +38,16 @@ namespace SabaPlus.API.Controllers
 			[FromServices] IGetService<EndGameRequest, EndGameResult> service,
 			EndGameRequest source
 			)
+		{
+			var result = await service.GetAsync(source, cancellationToken: HttpContext.RequestAborted).ConfigureAwait(false);
+
+			return result;
+		}
+
+		[HttpPost("GetPlayerInfo")]
+		public async ValueTask<GetPlayerInfoResult> GetPlayerInfo(
+			[FromServices] IGetService<GetPlayerInfoRequest, GetPlayerInfoResult> service,
+			GetPlayerInfoRequest source)
 		{
 			var result = await service.GetAsync(source, cancellationToken: HttpContext.RequestAborted).ConfigureAwait(false);
 
