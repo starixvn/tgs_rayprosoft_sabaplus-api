@@ -2,7 +2,7 @@
 
 namespace SabaPlus.API.Models.Settle;
 
-public class EndGameRequest : OperatorRequest<EndGameRequestPayload>;
+public class EndGameRequest : GameProviderRequest<EndGameRequestPayload>;
 
 public record EndGameRequestPayload(string OperatorCustId, string GameType, PlaceBetDataSet[] BetDataSet);
 

@@ -1,5 +1,5 @@
 ﻿namespace SabaPlus.API.Models.Settle;
 
-public class EndGameResult : OperatorResponse<EndGameResponsePayload>;
+public class EndGameResult : GameProviderResponse<EndGameResponsePayload>;
 
 public record EndGameResponsePayload(string OperatorCustId, decimal Balance);

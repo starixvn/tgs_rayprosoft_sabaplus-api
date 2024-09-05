@@ -1,6 +1,6 @@
 ﻿namespace SabaPlus.API.Models;
 
-public class OperatorResponse<TPayload>
+public class GameProviderResponse<TPayload>
 {
 	public DateTime TimeStamp { get; set; }
 
