@@ -1,6 +1,6 @@
 ﻿namespace SabaPlus.API.Models.FreeSpin;
 
-public class FreeSpinRequest: OperatorRequest<FreeSpinRequestPayload>;
+public class FreeSpinRequest: GameProviderRequest<FreeSpinRequestPayload>;
 
 public record FreeSpinRequestPayload(string OperatorCustId, string GameType, string IpAddress, FreeSpinRequestDataSet[] BetDataSet);
 

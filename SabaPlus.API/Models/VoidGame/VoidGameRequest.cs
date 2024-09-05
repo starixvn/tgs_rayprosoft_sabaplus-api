@@ -2,7 +2,7 @@
 
 namespace SabaPlus.API.Models.VoidGame;
 
-public class VoidGameRequest : OperatorRequest<VoidGameRequestPayload>;
+public class VoidGameRequest : GameProviderRequest<VoidGameRequestPayload>;
 
 public record VoidGameRequestPayload(string OperatorCustId, string GameType, VoidGameRequestDataSet[] BetDataSet);
 

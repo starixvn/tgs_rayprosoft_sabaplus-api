@@ -2,7 +2,7 @@
 
 namespace SabaPlus.API.Models.Bonus;
 
-public class BonusRequest: OperatorRequest<BonusRequestPayload>;
+public class BonusRequest: GameProviderRequest<BonusRequestPayload>;
 
 public record BonusRequestPayload(string OperatorCustId, string GameType, BonusDataSet[] BetDataSet);
 

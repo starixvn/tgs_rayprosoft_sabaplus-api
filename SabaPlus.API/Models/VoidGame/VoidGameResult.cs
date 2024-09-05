@@ -1,6 +1,6 @@
 ﻿namespace SabaPlus.API.Models.VoidGame;
 
-public class VoidGameResult: OperatorResponse<VoidGameResponsePayload>;
+public class VoidGameResult: GameProviderResponse<VoidGameResponsePayload>;
 
 public record VoidGameResponsePayload
 {

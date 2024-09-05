@@ -1,7 +1,7 @@
 ﻿
 namespace SabaPlus.API.Models.PlayerInfo;
 
-public class GetPlayerInfoResult : OperatorResponse<GetPlayerInfoResponsePayload>;
+public class GetPlayerInfoResult : GameProviderResponse<GetPlayerInfoResponsePayload>;
 
 public record GetPlayerInfoResponsePayload
 {
