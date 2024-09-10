@@ -5,7 +5,7 @@ using SabaPlus.API.Models.FreeSpin;
 using SabaPlus.API.Models.PlaceBet;
 using SabaPlus.API.Models.PlaceBetAndSettle;
 using SabaPlus.API.Models.PlayerInfo;
-using SabaPlus.API.Models.Settle;
+using SabaPlus.API.Models.EndGame;
 using SabaPlus.API.Models.VoidGame;
 using Tgs.ServiceUtility;
 
