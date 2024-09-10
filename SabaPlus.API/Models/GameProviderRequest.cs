@@ -2,7 +2,7 @@
 
 public class GameProviderRequest<TPayload>
 {
-	public DateTime TimeStamp { get; set; }
+	public string TimeStamp { get; set; }
 
 	public string Seq { get; set; }
 

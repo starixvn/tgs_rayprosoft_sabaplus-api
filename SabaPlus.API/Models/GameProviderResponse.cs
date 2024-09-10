@@ -2,7 +2,7 @@
 
 public class GameProviderResponse<TPayload>
 {
-	public DateTime TimeStamp { get; set; }
+	public string TimeStamp { get; set; }
 
 	public string Seq { get; set; } = string.Empty;
 

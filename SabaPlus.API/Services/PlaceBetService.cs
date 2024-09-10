@@ -16,7 +16,7 @@ public class PlaceBetGetService(ISabaPlusApiMessagePublishHandler messagePublish
 			var res = new PlaceBetResult
 			{
 				Seq = Guid.NewGuid().ToString(),
-				TimeStamp = DateTime.Now,
+				TimeStamp = "2023/08/01 07:48:24.040",
 				Payload = new PlaceBetResponsePayload("11111", 123, new PlaceBetDataSet[] {
 				new PlaceBetDataSet {
 					TicketNo = "2323",

@@ -14,7 +14,7 @@ public class GetPlayerInfoService(ISabaPlusApiMessagePublishHandler messagePubli
 			var res = new GetPlayerInfoResult
 			{
 				Seq = Guid.NewGuid().ToString(),
-				TimeStamp = DateTime.Now,
+				TimeStamp = "2021/12/16 16:31:00.768",
 				Payload = new GetPlayerInfoResponsePayload {
 					OperatorCustId = "123456798",
 					UserName = "Player123456789",

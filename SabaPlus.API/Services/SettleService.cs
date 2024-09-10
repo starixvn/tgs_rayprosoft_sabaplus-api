@@ -13,11 +13,13 @@ public class SettleService(ISabaPlusApiMessagePublishHandler messagePublisher) :
 		{
 			var res = new EndGameResult
 			{
+				TimeStamp	 = "2023/08/01 07:48:24.040",
 				Payload = new EndGameResponsePayload("cust id", 1212)
 			};
 
 			await messagePublisher.LogApi(new ApiLogMessage()
 			{
+				
 				Action = "Endgame",
 				Request = query,
 				Response = res

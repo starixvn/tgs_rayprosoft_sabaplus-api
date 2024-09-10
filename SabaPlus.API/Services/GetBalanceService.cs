@@ -15,7 +15,7 @@ public class GetBalanceService(ISabaPlusApiMessagePublishHandler messagePublishe
 			{
 				Seq = Guid.NewGuid().ToString(),
 				Payload = new GetBalanceResponsePayload(100),
-				TimeStamp = DateTime.UtcNow,
+				TimeStamp = "2021/12/16 16:31:00.768",
 			};
 
 			await messagePublisher.LogApi(new ApiLogMessage()

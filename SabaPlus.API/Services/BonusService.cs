@@ -16,7 +16,7 @@ public class BonusServicee(ISabaPlusApiMessagePublishHandler messagePublisher) :
 			var res = new BonusResult
 			{
 				Seq = Guid.NewGuid().ToString(),
-				TimeStamp = DateTime.Now,
+				TimeStamp = "2023/08/01 07:48:24.040",
 				ErrorCode = 0,
 				ErrorMessage = "Success",
 				Payload= new BonusPayload("cust id", 1212, string.Empty)
