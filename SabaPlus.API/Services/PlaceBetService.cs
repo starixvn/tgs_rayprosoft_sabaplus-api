@@ -18,14 +18,14 @@ public class PlaceBetGetService(ISabaPlusApiMessagePublishHandler messagePublish
 
 			foreach (var betData in betDataSets)
 			{
-				betData.RefNo = (new Random()).Next(10000000).ToString();
+				betData.RefNo = Guid.NewGuid().ToString();
 			}
 
 			var response = new PlaceBetResult
 			{
 				Seq = Guid.NewGuid().ToString(),
 				TimeStamp = DateTime.Now.ToString(),
-				Payload = new PlaceBetResponsePayload(request.Payload.OperatorCustId, 123m, betDataSets)
+				Payload = new PlaceBetResponsePayload("123456798", 123, betDataSets)
 			};
 
 			var apiLogMessage = new ApiLogMessage()
