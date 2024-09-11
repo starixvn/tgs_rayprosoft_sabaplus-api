@@ -18,8 +18,8 @@ public class GetPlayerInfoService(ISabaPlusApiMessagePublishHandler messagePubli
 				Payload = new GetPlayerInfoResponsePayload {
 					OperatorCustId = "123456798",
 					UserName = "123456798",
-					CurrencyISO = "USD",
-					Currency = "USD",
+					CurrencyISO = "THB",
+					Currency = "THB",
 					Balance = 789.00m,
 					MinBet = 0m,
 					MaxBet = 1000m,
