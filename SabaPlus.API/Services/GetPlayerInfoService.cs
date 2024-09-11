@@ -23,7 +23,6 @@ public class GetPlayerInfoService(ISabaPlusApiMessagePublishHandler messagePubli
 					Balance = 789.00m,
 					MinBet = 1m,
 					MaxBet = 1000m,
-					BetGroup = "BetGroup",
 					WalletSideToken = "3nvkjdleenvjeoi3lfmwl"
 				}
 

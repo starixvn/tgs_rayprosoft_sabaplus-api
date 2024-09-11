@@ -7,25 +7,25 @@ namespace SabaPlus.API.Services;
 
 public class EndGameService(ISabaPlusApiMessagePublishHandler messagePublisher) : IGetService<EndGameRequest, EndGameResult>
 {
-	public async ValueTask<EndGameResult> GetAsync(EndGameRequest query, CancellationToken cancellationToken = default)
+	public async ValueTask<EndGameResult> GetAsync(EndGameRequest request, CancellationToken cancellationToken = default)
 	{
 		try
 		{
-			var res = new EndGameResult
+			var response = new EndGameResult
 			{
 				TimeStamp = DateTime.Now.ToString(),
-				Payload = new EndGameResponsePayload("123456798", 1212)
+				Payload = new EndGameResponsePayload(request.Payload.OperatorCustId, 1212m)
 			};
 
 			await messagePublisher.LogApi(new ApiLogMessage()
 			{
 				
 				Action = "Endgame",
-				Request = query,
-				Response = res
+				Request = request,
+				Response = response
 			}, cancellationToken);
 
-			return res;
+			return response;
 		}
 		catch (Exception ex)
 		{

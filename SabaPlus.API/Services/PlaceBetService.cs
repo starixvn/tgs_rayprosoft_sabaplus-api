@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Transactions;
+using Newtonsoft.Json;
 using SabaPlus.API.Messages;
 using SabaPlus.API.Models.PlaceBet;
 using SabaPlus.Common;
@@ -9,43 +10,39 @@ namespace SabaPlus.API.Services;
 
 public class PlaceBetGetService(ISabaPlusApiMessagePublishHandler messagePublisher) : IGetService<PlaceBetRequest, PlaceBetResult>
 {
-	public async ValueTask<PlaceBetResult> GetAsync(PlaceBetRequest query, CancellationToken cancellationToken = default)
+	public async ValueTask<PlaceBetResult> GetAsync(PlaceBetRequest request, CancellationToken cancellationToken = default)
 	{
 		try
 		{
-			var res = new PlaceBetResult
+			var betDataSets = JsonConvert.DeserializeObject<PlaceBetResultDataSet[]>(JsonConvert.SerializeObject(request.Payload.BetDataSet));
+
+			foreach (var betData in betDataSets)
+			{
+				betData.RefNo = (new Random()).Next(10000000).ToString();
+			}
+
+			var response = new PlaceBetResult
 			{
 				Seq = Guid.NewGuid().ToString(),
 				TimeStamp = DateTime.Now.ToString(),
-				Payload = new PlaceBetResponsePayload("123456798", 123, new PlaceBetDataSet[] {
-				new PlaceBetDataSet {
-					TicketNo = Guid.NewGuid().ToString(),
-					GameId = "5402",
-					GameRoundId = "1111",
-					TransactionId = Guid.NewGuid().ToString(),
-					Stake = 12,
-					ActualStake = 11,
-					Odds = 0.98m,
-					BetChoice = "choice 1",
-					TableCode = "table 1"
-				} })
+				Payload = new PlaceBetResponsePayload(request.Payload.OperatorCustId, 123m, betDataSets)
 			};
 
 			var apiLogMessage = new ApiLogMessage()
 			{
 				Action = "PlaceBet",
-				Request = query,
-				Response = res
+				Request = request,
+				Response = response
 			};
 
 			await messagePublisher.LogApi(new ApiLogMessage()
 			{
 				Action = apiLogMessage.Action,
-				Request = query,
-				Response = res
+				Request = request,
+				Response = response
 			}, cancellationToken);
 
-			return res;
+			return response;
 		}
 		catch (Exception ex)
 		{
