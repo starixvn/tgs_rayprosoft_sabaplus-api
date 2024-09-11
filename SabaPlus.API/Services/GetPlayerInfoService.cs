@@ -14,17 +14,17 @@ public class GetPlayerInfoService(ISabaPlusApiMessagePublishHandler messagePubli
 			var res = new GetPlayerInfoResult
 			{
 				Seq = Guid.NewGuid().ToString(),
-				TimeStamp = "2021/12/16 16:31:00.768",
+				TimeStamp = DateTime.UtcNow.ToString(),
 				Payload = new GetPlayerInfoResponsePayload {
 					OperatorCustId = "123456798",
-					UserName = "Player123456789",
+					UserName = "123456798",
 					CurrencyISO = "USD",
 					Currency = "USD",
-					Balance = 100.00m,
-					MinBet = 123.45m,
-					MaxBet = 123.45m,
-					BetGroup = "Bet ",
-					WalletSideToken = "Wallet token"
+					Balance = 789.00m,
+					MinBet = 0m,
+					MaxBet = 1000m,
+					BetGroup = "BetGroup",
+					WalletSideToken = "3nvkjdleenvjeoi3lfmwl"
 				}
 
 			};

@@ -94,4 +94,6 @@ app.MapHealthChecks("/healthcheck");
 
 app.MapHealthChecks("/");
 
+SentrySdk.CaptureMessage($"Started SABA Plus API at {DateTime.Now.ToString()}");
+
 app.Run();
