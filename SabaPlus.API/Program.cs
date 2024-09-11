@@ -7,6 +7,7 @@ using SabaPlus.API;
 using SabaPlus.API.Messages;
 using SabaPlus.API.Middlewares;
 using SabaPlus.Core.DependencyInjection;
+using SabaPlus.Core.Models;
 using Tgs.GameRecord.Saba.Common;
 using Tgs.MessageQueue.Nats.Serializers;
 
@@ -23,11 +24,17 @@ builder.Services
 	.Services
 	.AddSingleton<MongoDBConnectionManager>()
 	.AddSabaPlusApiCore()
-	.AddApiLogsRepositories(mongoClientResolver: (sp) => sp.GetRequiredService<MongoDBConnectionManager>().MongoClient);
+	.AddRepositories(mongoClientResolver: (sp) => sp.GetRequiredService<MongoDBConnectionManager>().MongoClient)
+	.AddCashServiceClient((op, sp) =>
+	{
+		var config = sp.GetRequiredService<IConfiguration>();
+		op.BaseUrl = config.GetValue<Uri>("ServicesUrl:CashClientBaseUrl")!;
+	})
+	.AddMemoryCache();
 
 builder.Services
 	.AddMessageQueue()
-	.AddInProcessMessageQueue(configuration => 
+	.AddInProcessMessageQueue(configuration =>
 		configuration.AddHandler<ApiLogsMessageHandler>(Constants.ApiLogsExchange))
 	.AddInProcessGlobPatternExchange(Constants.InprocessGlobExchange);
 

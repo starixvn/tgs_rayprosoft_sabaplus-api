@@ -13,9 +13,7 @@ public class GetBalanceService(ISabaPlusApiMessagePublishHandler messagePublishe
 		{
 			var res = new GetBalanceResult
 			{
-				Seq = Guid.NewGuid().ToString(),
 				Payload = new GetBalanceResponsePayload(100),
-				TimeStamp = DateTime.Now.ToString(),
 			};
 
 			await messagePublisher.LogApi(new ApiLogMessage()
@@ -32,7 +30,6 @@ public class GetBalanceService(ISabaPlusApiMessagePublishHandler messagePublishe
 			Console.Write(ex.ToString());
 			return new GetBalanceResult
 			{
-				Seq = Guid.NewGuid().ToString(),
 				ErrorCode = 1,
 				ErrorMessage = "Account does not exist"
 			};

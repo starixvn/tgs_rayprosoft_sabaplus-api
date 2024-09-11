@@ -21,8 +21,6 @@ public class PlaceBetAndSettleService(ISabaPlusApiMessagePublishHandler messageP
 
 			var response = new PlaceBetAndSettleResult
 			{
-				Seq = Guid.NewGuid().ToString(),
-				TimeStamp = DateTime.Now.ToString(),
 				ErrorCode = 0,
 				ErrorMessage = "Success",
 				Payload = new PlaceBetAndSettlePayload(request.Payload.OperatorCustId, 1555.5m, betDataSets)

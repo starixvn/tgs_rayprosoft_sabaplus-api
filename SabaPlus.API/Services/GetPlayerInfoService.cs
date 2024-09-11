@@ -1,31 +1,39 @@
 ﻿using SabaPlus.API.Messages;
 using SabaPlus.API.Models.PlayerInfo;
 using SabaPlus.Common;
+using SabaPlus.Core;
+using Tgs.CashService.Client;
 using Tgs.ServiceUtility;
 
 namespace SabaPlus.API.Services;
 
-public class GetPlayerInfoService(ISabaPlusApiMessagePublishHandler messagePublisher) : IGetService<GetPlayerInfoRequest, GetPlayerInfoResult>
+public class GetPlayerInfoService(
+	ISabaPlusApiMessagePublishHandler messagePublisher,
+	IPlayerRepository playerRepository,
+	ICashServiceClient cashClient
+	) : IGetService<GetPlayerInfoRequest, GetPlayerInfoResult>
 {
 	public async ValueTask<GetPlayerInfoResult> GetAsync(GetPlayerInfoRequest query, CancellationToken cancellationToken = default)
 	{
 		try
 		{
+			var playerCode = query.Payload.OperatorCustId;
+			var playerInfo = await playerRepository.GetPlayerInfoByPlayerCodeAsync(playerCode, cancellationToken).ConfigureAwait(false);
+			var balance = (await cashClient.GameProviderGetBalanceAsync(playerCode, cancellationToken).ConfigureAwait(false)).Balance;
 			var res = new GetPlayerInfoResult
 			{
-				Seq = Guid.NewGuid().ToString(),
-				TimeStamp = DateTime.UtcNow.ToString(),
-				Payload = new GetPlayerInfoResponsePayload {
-					OperatorCustId = "123456798",
-					UserName = "123456798",
-					CurrencyISO = "THB",
-					Currency = "THB",
-					Balance = 789.00m,
+				Payload = new GetPlayerInfoResponsePayload
+				{
+					OperatorCustId = playerInfo!.PlayerCode,
+					UserName = playerInfo.Username,
+					CurrencyISO = playerInfo.CurrencyCode,
+					Currency = playerInfo.CurrencyCode,
+					Balance = balance,
+					WalletSideToken = query.Payload.WalletSideToken,
+					// TODO: correct min, max & group bet
 					MinBet = 1m,
-					MaxBet = 1000m,
-					WalletSideToken = "3nvkjdleenvjeoi3lfmwl"
+					MaxBet = 100_000,
 				}
-
 			};
 
 			await messagePublisher.LogApi(new ApiLogMessage()
@@ -39,8 +47,8 @@ public class GetPlayerInfoService(ISabaPlusApiMessagePublishHandler messagePubli
 		}
 		catch (Exception ex)
 		{
-			Console.Write(ex.ToString());
-			return new GetPlayerInfoResult { ErrorCode = 1, ErrorMessage = "Get Player info failed" };
+			SentrySdk.CaptureException(ex);
+			return new GetPlayerInfoResult { ErrorCode = 1000, ErrorMessage = "Unspecified Error" };
 		}
 	}
 }

@@ -13,13 +13,11 @@ public class EndGameService(ISabaPlusApiMessagePublishHandler messagePublisher) 
 		{
 			var response = new EndGameResult
 			{
-				TimeStamp = DateTime.Now.ToString(),
 				Payload = new EndGameResponsePayload(request.Payload.OperatorCustId, 1212m)
 			};
 
 			await messagePublisher.LogApi(new ApiLogMessage()
 			{
-				
 				Action = "Endgame",
 				Request = request,
 				Response = response
@@ -30,7 +28,7 @@ public class EndGameService(ISabaPlusApiMessagePublishHandler messagePublisher) 
 		catch (Exception ex)
 		{
 			Console.Write(ex.ToString());
-			return new EndGameResult { ErrorCode = 1, ErrorMessage = "Endgame failed"};
+			return new EndGameResult { ErrorCode = 1, ErrorMessage = "Endgame failed" };
 		}
 	}
 }

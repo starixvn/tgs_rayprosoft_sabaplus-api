@@ -23,8 +23,6 @@ public class PlaceBetGetService(ISabaPlusApiMessagePublishHandler messagePublish
 
 			var response = new PlaceBetResult
 			{
-				Seq = Guid.NewGuid().ToString(),
-				TimeStamp = DateTime.Now.ToString(),
 				Payload = new PlaceBetResponsePayload("123456798", 123, betDataSets)
 			};
 
@@ -47,7 +45,7 @@ public class PlaceBetGetService(ISabaPlusApiMessagePublishHandler messagePublish
 		catch (Exception ex)
 		{
 			Console.Write(ex.ToString());
-			return new PlaceBetResult { ErrorCode = 1, ErrorMessage= "Place bet failed"};
+			return new PlaceBetResult { ErrorCode = 1, ErrorMessage = "Place bet failed" };
 		}
 	}
 }

@@ -7,21 +7,18 @@ namespace SabaPlus.API.Services;
 
 public class VoidGameService(ISabaPlusApiMessagePublishHandler messagePublisher) : IGetService<VoidGameRequest, VoidGameResult>
 {
-
-
 	public async ValueTask<VoidGameResult> GetAsync(VoidGameRequest query, CancellationToken cancellationToken = default)
 	{
 		try
 		{
 			var res = new VoidGameResult
 			{
-				Seq = Guid.NewGuid().ToString(),
-				TimeStamp = "2023/08/01 07:48:24.040",
 				ErrorCode = 0,
 				ErrorMessage = "Success",
-				Payload = new VoidGameResponsePayload {
-			     Balance = 100.00m,
-				 OperatorCustId ="123456789"
+				Payload = new VoidGameResponsePayload
+				{
+					Balance = 100.00m,
+					OperatorCustId = "123456789"
 				}
 			};
 
@@ -38,12 +35,10 @@ public class VoidGameService(ISabaPlusApiMessagePublishHandler messagePublisher)
 		{
 			Console.Write(ex.ToString());
 			return new VoidGameResult
-			{ 
-				Seq = Guid.NewGuid().ToString(),
+			{
 				ErrorCode = 1,
 				ErrorMessage = "Game does not exist"
 			};
 		}
 	}
 }
-

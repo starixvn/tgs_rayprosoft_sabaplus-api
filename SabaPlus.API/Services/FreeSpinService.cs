@@ -13,8 +13,6 @@ public class FreeSpinService(ISabaPlusApiMessagePublishHandler messagePublisher)
 		{
 			var res = new FreeSpinResult
 			{
-				Seq = Guid.NewGuid().ToString(),
-				TimeStamp = "2023/08/01 07:48:24.040",
 				ErrorCode = 0,
 				ErrorMessage = "Success",
 				Payload = new FreeSpinPayload("11111", 123, new[] {
@@ -38,7 +36,6 @@ public class FreeSpinService(ISabaPlusApiMessagePublishHandler messagePublisher)
 			Console.Write(ex.ToString());
 			return new FreeSpinResult
 			{
-				Seq = Guid.NewGuid().ToString(),
 				ErrorCode = 1,
 				ErrorMessage = "Account does not exist"
 			};
