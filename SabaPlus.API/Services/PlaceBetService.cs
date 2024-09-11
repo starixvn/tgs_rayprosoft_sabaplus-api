@@ -16,18 +16,18 @@ public class PlaceBetGetService(ISabaPlusApiMessagePublishHandler messagePublish
 			var res = new PlaceBetResult
 			{
 				Seq = Guid.NewGuid().ToString(),
-				TimeStamp = "2023/08/01 07:48:24.040",
-				Payload = new PlaceBetResponsePayload("11111", 123, new PlaceBetDataSet[] {
+				TimeStamp = DateTime.Now.ToString(),
+				Payload = new PlaceBetResponsePayload("123456798", 123, new PlaceBetDataSet[] {
 				new PlaceBetDataSet {
-					TicketNo = "2323",
-					GameId = "game id",
-					GameRoundId = " game round id",
-					TransactionId = "transaction id",
+					TicketNo = Guid.NewGuid().ToString(),
+					GameId = "5402",
+					GameRoundId = "1111",
+					TransactionId = Guid.NewGuid().ToString(),
 					Stake = 12,
 					ActualStake = 11,
 					Odds = 0.98m,
 					BetChoice = "choice 1",
-					TableCode = " table 1"
+					TableCode = "table 1"
 				} })
 			};
 

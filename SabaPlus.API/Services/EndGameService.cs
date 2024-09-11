@@ -13,8 +13,8 @@ public class EndGameService(ISabaPlusApiMessagePublishHandler messagePublisher) 
 		{
 			var res = new EndGameResult
 			{
-				TimeStamp	 = "2023/08/01 07:48:24.040",
-				Payload = new EndGameResponsePayload("cust id", 1212)
+				TimeStamp = DateTime.Now.ToString(),
+				Payload = new EndGameResponsePayload("123456798", 1212)
 			};
 
 			await messagePublisher.LogApi(new ApiLogMessage()

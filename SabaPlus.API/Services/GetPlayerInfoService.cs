@@ -21,7 +21,7 @@ public class GetPlayerInfoService(ISabaPlusApiMessagePublishHandler messagePubli
 					CurrencyISO = "THB",
 					Currency = "THB",
 					Balance = 789.00m,
-					MinBet = 0m,
+					MinBet = 1m,
 					MaxBet = 1000m,
 					BetGroup = "BetGroup",
 					WalletSideToken = "3nvkjdleenvjeoi3lfmwl"

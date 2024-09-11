@@ -14,12 +14,12 @@ public class PlaceBetAndSettleService(ISabaPlusApiMessagePublishHandler messageP
 			var res = new PlaceBetAndSettleResult
 			{
 				Seq = Guid.NewGuid().ToString(),
-				TimeStamp = "2023/08/01 07:48:24.040",
+				TimeStamp = DateTime.Now.ToString(),
 				ErrorCode = 0,
 				ErrorMessage = "Success",
-				Payload = new PlaceBetAndSettlePayload("11111", 123, new [] {
+				Payload = new PlaceBetAndSettlePayload("123456798", 123, new [] {
 				new PlaceBetAndSettleResponseDataSet {
-					TicketNo = "2323",
+					TicketNo = Guid.NewGuid().ToString(),
 					RefNo ="abde"
 				} })
 			};
