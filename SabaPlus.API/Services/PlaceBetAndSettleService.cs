@@ -1,4 +1,5 @@
-﻿using SabaPlus.API.Messages;
+﻿using Newtonsoft.Json;
+using SabaPlus.API.Messages;
 using SabaPlus.API.Models.PlaceBetAndSettle;
 using SabaPlus.Common;
 using Tgs.ServiceUtility;
@@ -7,31 +8,34 @@ namespace SabaPlus.API.Services;
 
 public class PlaceBetAndSettleService(ISabaPlusApiMessagePublishHandler messagePublisher) : IGetService<PlaceBetAndSettleRequest, PlaceBetAndSettleResult>
 {
-	public async ValueTask<PlaceBetAndSettleResult> GetAsync(PlaceBetAndSettleRequest query, CancellationToken cancellationToken = default)
+	public async ValueTask<PlaceBetAndSettleResult> GetAsync(PlaceBetAndSettleRequest request, CancellationToken cancellationToken = default)
 	{
 		try
 		{
-			var res = new PlaceBetAndSettleResult
+			var betDataSets = JsonConvert.DeserializeObject<PlaceBetAndSettleResponseDataSet[]>(JsonConvert.SerializeObject(request.Payload.BetDataSet));
+
+			foreach (var betData in betDataSets)
+			{
+				betData.RefNo = (new Random()).Next(10000000).ToString();
+			}
+
+			var response = new PlaceBetAndSettleResult
 			{
 				Seq = Guid.NewGuid().ToString(),
 				TimeStamp = DateTime.Now.ToString(),
 				ErrorCode = 0,
 				ErrorMessage = "Success",
-				Payload = new PlaceBetAndSettlePayload("123456798", 123, new [] {
-				new PlaceBetAndSettleResponseDataSet {
-					TicketNo = Guid.NewGuid().ToString(),
-					RefNo ="abde"
-				} })
+				Payload = new PlaceBetAndSettlePayload(request.Payload.OperatorCustId, 1555.5m, betDataSets)
 			};
 
 			await messagePublisher.LogApi(new ApiLogMessage()
 			{
 				Action = "PlaceBetAndSettle",
-				Request = query,
-				Response = res
+				Request = request,
+				Response = response
 			}, cancellationToken);
 
-			return res;
+			return response;
 		}
 		catch (Exception ex)
 		{
