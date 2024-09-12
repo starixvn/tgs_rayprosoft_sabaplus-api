@@ -28,7 +28,7 @@ public class EndGameService(ISabaPlusApiMessagePublishHandler messagePublisher) 
 		catch (Exception ex)
 		{
 			Console.Write(ex.ToString());
-			return new EndGameResult { ErrorCode = 1, ErrorMessage = "Endgame failed" };
+			return new EndGameResult { ErrorCode = 1 };
 		}
 	}
 }

@@ -14,7 +14,6 @@ public class VoidGameService(ISabaPlusApiMessagePublishHandler messagePublisher)
 			var res = new VoidGameResult
 			{
 				ErrorCode = 0,
-				ErrorMessage = "Success",
 				Payload = new VoidGameResponsePayload
 				{
 					Balance = 100.00m,
@@ -37,7 +36,6 @@ public class VoidGameService(ISabaPlusApiMessagePublishHandler messagePublisher)
 			return new VoidGameResult
 			{
 				ErrorCode = 1,
-				ErrorMessage = "Game does not exist"
 			};
 		}
 	}

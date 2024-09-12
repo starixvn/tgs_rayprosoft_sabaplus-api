@@ -14,7 +14,6 @@ public class BonusServicee(ISabaPlusApiMessagePublishHandler messagePublisher) :
 			var res = new BonusResult
 			{
 				ErrorCode = 0,
-				ErrorMessage = "Success",
 				Payload = new BonusPayload("cust id", 1212, string.Empty)
 			};
 
@@ -33,7 +32,6 @@ public class BonusServicee(ISabaPlusApiMessagePublishHandler messagePublisher) :
 			return new BonusResult
 			{
 				ErrorCode = 1,
-				ErrorMessage = "Account does not exist"
 			};
 		}
 	}

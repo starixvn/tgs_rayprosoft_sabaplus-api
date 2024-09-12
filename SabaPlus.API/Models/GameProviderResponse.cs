@@ -8,7 +8,7 @@ public class GameProviderResponse<TPayload>
 
 	public int ErrorCode { get; set; } = 0;
 
-	public string ErrorMessage { get; set; } = string.Empty;
+	public string ErrorMessage => ErrorMapper.GetErrorMessage(ErrorCode);
 
 	public TPayload Payload { get; set; }
 }

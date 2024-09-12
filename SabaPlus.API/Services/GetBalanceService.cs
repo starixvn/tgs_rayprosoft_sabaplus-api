@@ -1,21 +1,28 @@
 ﻿using SabaPlus.API.Messages;
+using SabaPlus.API.Models;
 using SabaPlus.API.Models.Balance;
 using SabaPlus.Common;
+using Tgs.CashService.Client;
 using Tgs.ServiceUtility;
 
 namespace SabaPlus.API.Services;
 
-public class GetBalanceService(ISabaPlusApiMessagePublishHandler messagePublisher) : IGetService<GetBalanceRequest, GetBalanceResult>
+public class GetBalanceService(
+	ISabaPlusApiMessagePublishHandler messagePublisher,
+	ICashServiceClient cashClient
+	) : IGetService<GetBalanceRequest, GetBalanceResult>
 {
 	public async ValueTask<GetBalanceResult> GetAsync(GetBalanceRequest query, CancellationToken cancellationToken = default)
 	{
 		try
 		{
+			var playerCode = query.Payload.OperatorCustId;
+			var balanceResult = await cashClient.GameProviderGetBalanceAsync(playerCode, cancellationToken).ConfigureAwait(false);
 			var res = new GetBalanceResult
 			{
-				Payload = new GetBalanceResponsePayload(100),
+				ErrorCode = ErrorMapper.GetErrorCode(balanceResult.ErrorCode),
+				Payload = new GetBalanceResponsePayload(balanceResult.Balance),
 			};
-
 			await messagePublisher.LogApi(new ApiLogMessage()
 			{
 				Action = nameof(GetBalanceRequest),
@@ -27,12 +34,8 @@ public class GetBalanceService(ISabaPlusApiMessagePublishHandler messagePublishe
 		}
 		catch (Exception ex)
 		{
-			Console.Write(ex.ToString());
-			return new GetBalanceResult
-			{
-				ErrorCode = 1,
-				ErrorMessage = "Account does not exist"
-			};
+			SentrySdk.CaptureException(ex);
+			return new GetBalanceResult { ErrorCode = ErrorMapper.UnspecifiedError };
 		}
 	}
 }

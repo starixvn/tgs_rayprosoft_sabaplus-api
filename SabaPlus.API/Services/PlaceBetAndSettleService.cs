@@ -22,7 +22,6 @@ public class PlaceBetAndSettleService(ISabaPlusApiMessagePublishHandler messageP
 			var response = new PlaceBetAndSettleResult
 			{
 				ErrorCode = 0,
-				ErrorMessage = "Success",
 				Payload = new PlaceBetAndSettlePayload(request.Payload.OperatorCustId, 1555.5m, betDataSets)
 			};
 
@@ -38,7 +37,7 @@ public class PlaceBetAndSettleService(ISabaPlusApiMessagePublishHandler messageP
 		catch (Exception ex)
 		{
 			Console.Write(ex.ToString());
-			return new PlaceBetAndSettleResult { ErrorCode = 1, ErrorMessage = "Place bet and settle failed" };
+			return new PlaceBetAndSettleResult { ErrorCode = 1 };
 		}
 	}
 }

@@ -17,11 +17,11 @@ internal class PlayerRepository : IPlayerRepository
 	private readonly IMemoryCache memoryCache;
 	private readonly CacheSettingsOptions cacheSettings;
 
-	public PlayerRepository(IConfiguration configuration, IMemoryCache memoryCache, IOptions<CacheSettingsOptions> cacheSettings)
+	public PlayerRepository(IConfiguration configuration, IMemoryCache memoryCache)
 	{
 		connectionString = configuration.GetConnectionString("Tgs")!;
 		this.memoryCache = memoryCache;
-		this.cacheSettings = new CacheSettingsOptions(10);
+		cacheSettings = new CacheSettingsOptions(60);
 	}
 
 	public async ValueTask<PlayerInfo?> GetPlayerInfoByPlayerCodeAsync(string playerCode, CancellationToken cancellationToken = default)

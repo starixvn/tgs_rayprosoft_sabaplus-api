@@ -1,0 +1,41 @@
+﻿namespace SabaPlus.API.Models;
+
+public static class ErrorMapper
+{
+	public static int UnspecifiedError = 1000;
+	public static int ParameterIncorrect = 1007;
+	public static int AccountNotExist = 2003;
+	public static int InsufficientFunds = 3002;
+	public static int DuplicateTransaction = 3017;
+
+	public static Dictionary<string, int> InternalErrorCodes = new()
+	{
+		["101"] = DuplicateTransaction,
+		["102"] = ParameterIncorrect,
+		["201"] = UnspecifiedError,
+		["202"] = DuplicateTransaction,
+		["203"] = AccountNotExist,
+		["204"] = InsufficientFunds,
+		["205"] = ParameterIncorrect,
+		["206"] = ParameterIncorrect,
+	};
+
+	public static Dictionary<int, string> ErrorMessage = new()
+	{
+		[UnspecifiedError] = "Unspecified Error",
+		[ParameterIncorrect] = "Parameter(s) Incorrect",
+		[AccountNotExist] = "Account does not exist",
+		[InsufficientFunds] = "Player has insufficient funds",
+		[DuplicateTransaction] = "Duplicate Transaction",
+	};
+
+	public static int GetErrorCode(string internalErrorCode)
+	{
+		return InternalErrorCodes.TryGetValue(internalErrorCode, out int errorCode) ? errorCode : UnspecifiedError;
+	}
+
+	public static string GetErrorMessage(int errorCode)
+	{
+		return ErrorMessage.TryGetValue(errorCode, out string? message) ? message : string.Empty;
+	}
+}

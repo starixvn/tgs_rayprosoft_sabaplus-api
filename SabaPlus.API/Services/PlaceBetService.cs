@@ -45,7 +45,7 @@ public class PlaceBetGetService(ISabaPlusApiMessagePublishHandler messagePublish
 		catch (Exception ex)
 		{
 			Console.Write(ex.ToString());
-			return new PlaceBetResult { ErrorCode = 1, ErrorMessage = "Place bet failed" };
+			return new PlaceBetResult { ErrorCode = 1 };
 		}
 	}
 }

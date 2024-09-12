@@ -14,7 +14,6 @@ public class FreeSpinService(ISabaPlusApiMessagePublishHandler messagePublisher)
 			var res = new FreeSpinResult
 			{
 				ErrorCode = 0,
-				ErrorMessage = "Success",
 				Payload = new FreeSpinPayload("11111", 123, new[] {
 				new FreeSpinResponseDataSet {
 					TicketNo = "2323",
@@ -36,8 +35,7 @@ public class FreeSpinService(ISabaPlusApiMessagePublishHandler messagePublisher)
 			Console.Write(ex.ToString());
 			return new FreeSpinResult
 			{
-				ErrorCode = 1,
-				ErrorMessage = "Account does not exist"
+				ErrorCode = 1
 			};
 		}
 	}

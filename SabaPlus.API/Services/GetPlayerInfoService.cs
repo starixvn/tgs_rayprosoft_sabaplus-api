@@ -1,4 +1,5 @@
 ﻿using SabaPlus.API.Messages;
+using SabaPlus.API.Models;
 using SabaPlus.API.Models.PlayerInfo;
 using SabaPlus.Common;
 using SabaPlus.Core;
@@ -18,23 +19,30 @@ public class GetPlayerInfoService(
 		try
 		{
 			var playerCode = query.Payload.OperatorCustId;
-			var playerInfo = await playerRepository.GetPlayerInfoByPlayerCodeAsync(playerCode, cancellationToken).ConfigureAwait(false);
-			var balance = (await cashClient.GameProviderGetBalanceAsync(playerCode, cancellationToken).ConfigureAwait(false)).Balance;
-			var res = new GetPlayerInfoResult
+			var balanceResult = (await cashClient.GameProviderGetBalanceAsync(playerCode, cancellationToken).ConfigureAwait(false));
+			var res = new GetPlayerInfoResult();
+
+			if (!string.IsNullOrEmpty(balanceResult.ErrorMessage))
 			{
-				Payload = new GetPlayerInfoResponsePayload
+				res.ErrorCode = ErrorMapper.GetErrorCode(balanceResult.ErrorCode);
+			}
+			else
+			{
+				var playerInfo = await playerRepository.GetPlayerInfoByPlayerCodeAsync(playerCode, cancellationToken).ConfigureAwait(false);
+
+				res.Payload = new GetPlayerInfoResponsePayload
 				{
 					OperatorCustId = playerInfo!.PlayerCode,
 					UserName = playerInfo.Username,
 					CurrencyISO = playerInfo.CurrencyCode,
 					Currency = playerInfo.CurrencyCode,
-					Balance = balance,
+					Balance = balanceResult.Balance,
 					WalletSideToken = query.Payload.WalletSideToken,
 					// TODO: correct min, max & group bet
 					MinBet = 1m,
 					MaxBet = 100_000,
-				}
-			};
+				};
+			}
 
 			await messagePublisher.LogApi(new ApiLogMessage()
 			{
@@ -48,7 +56,7 @@ public class GetPlayerInfoService(
 		catch (Exception ex)
 		{
 			SentrySdk.CaptureException(ex);
-			return new GetPlayerInfoResult { ErrorCode = 1000, ErrorMessage = "Unspecified Error" };
+			return new GetPlayerInfoResult { ErrorCode = ErrorMapper.UnspecifiedError };
 		}
 	}
 }
