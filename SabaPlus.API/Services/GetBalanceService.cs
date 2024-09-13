@@ -20,9 +20,12 @@ public class GetBalanceService(
 			var balanceResult = await cashClient.GameProviderGetBalanceAsync(playerCode, cancellationToken).ConfigureAwait(false);
 			var res = new GetBalanceResult
 			{
-				ErrorCode = ErrorMapper.GetErrorCode(balanceResult.ErrorCode),
 				Payload = new GetBalanceResponsePayload(balanceResult.Balance),
 			};
+			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
+			{
+				res.ErrorCode = ErrorMapper.GetErrorCode(balanceResult.ErrorCode);
+			}
 			await messagePublisher.LogApi(new ApiLogMessage()
 			{
 				Action = nameof(GetBalanceRequest),
