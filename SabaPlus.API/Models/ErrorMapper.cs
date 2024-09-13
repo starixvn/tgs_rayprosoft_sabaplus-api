@@ -2,6 +2,7 @@
 
 public static class ErrorMapper
 {
+	public static int Success = 0;
 	public static int UnspecifiedError = 1000;
 	public static int ParameterIncorrect = 1007;
 	public static int AccountNotExist = 2003;
@@ -37,5 +38,10 @@ public static class ErrorMapper
 	public static string GetErrorMessage(int errorCode)
 	{
 		return ErrorMessage.TryGetValue(errorCode, out string? message) ? message : string.Empty;
+	}
+
+	public static bool IsSuccess(string internalErrorCode)
+	{
+		return string.Equals(internalErrorCode, Success.ToString());
 	}
 }

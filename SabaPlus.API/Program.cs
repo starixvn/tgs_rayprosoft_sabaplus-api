@@ -84,6 +84,8 @@ builder.Services
 	.AddInterceptionService()
 	.AddServiceUtiltiyInterceptors();
 
+builder.Services.AddAutoMapper(typeof(MappingProfile));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

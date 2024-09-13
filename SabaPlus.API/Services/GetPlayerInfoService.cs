@@ -41,6 +41,7 @@ public class GetPlayerInfoService(
 					// TODO: correct min, max & group bet
 					MinBet = 1m,
 					MaxBet = 100_000,
+					//BetGroup = "BetGroup"
 				};
 			}
 

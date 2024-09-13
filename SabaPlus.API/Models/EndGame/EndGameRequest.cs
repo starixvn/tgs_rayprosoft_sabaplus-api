@@ -1,11 +1,10 @@
-﻿
-namespace SabaPlus.API.Models.EndGame;
+﻿namespace SabaPlus.API.Models.EndGame;
 
 public class EndGameRequest : GameProviderRequest<EndGameRequestPayload>;
 
-public record EndGameRequestPayload(string OperatorCustId, string GameType, EndGameDataSet[]? BetDataSet);
+public record EndGameRequestPayload(string? OperatorCustId, string? GameType, EndGameDataSet[]? BetDataSet);
 
-public class EndGameDataSet 
+public class EndGameDataSet
 {
 	public string? TicketNo { get; set; }
 
@@ -30,5 +29,4 @@ public class EndGameDataSet
 	public string? ResultId { get; set; }
 
 	public Dictionary<string, string>? OtherBetInfo { get; set; } = null;
-
 }

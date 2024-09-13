@@ -1,34 +1,109 @@
-﻿using SabaPlus.API.Messages;
+﻿using AutoMapper;
+using SabaPlus.API.Messages;
+using SabaPlus.API.Models;
 using SabaPlus.API.Models.EndGame;
 using SabaPlus.Common;
+using SabaPlus.Core;
+using SabaPlus.Repositories.Helpers;
+using SabaPlus.Repositories.Models;
+using Tgs.CashService.Client;
 using Tgs.ServiceUtility;
 
 namespace SabaPlus.API.Services;
 
-public class EndGameService(ISabaPlusApiMessagePublishHandler messagePublisher) : IGetService<EndGameRequest, EndGameResult>
+public class EndGameService(
+	ISabaPlusApiMessagePublishHandler messagePublisher,
+	ICashServiceClient cashClient,
+	IGameProviderRepository gameProviderRepository,
+	IMapper mapper
+	) : IGetService<EndGameRequest, EndGameResult>
 {
 	public async ValueTask<EndGameResult> GetAsync(EndGameRequest request, CancellationToken cancellationToken = default)
 	{
 		try
 		{
-			var response = new EndGameResult
+			var providerCode = await gameProviderRepository.GetGameProviderCodeByGameIdAsync(request.Payload.BetDataSet?.FirstOrDefault()?.GameId!);
+
+			var spResults = await SettleTransactionsAsync(request, providerCode, cancellationToken);
+			var failedSp = spResults.Find(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode!));
+
+			if (failedSp != default)
 			{
-				Payload = new EndGameResponsePayload(request.Payload.OperatorCustId, 1212m)
+				return await GenerateResponseAsync(request, GenerateFailResponse(failedSp.StatusCode!), cancellationToken);
+			}
+
+			var balanceResult = await AddBalanceAsync(request, providerCode, cancellationToken);
+			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
+			{
+				return await GenerateResponseAsync(request, GenerateFailResponse(balanceResult.ErrorCode), cancellationToken);
+			}
+
+			var res = new EndGameResult
+			{
+				Payload = new EndGameResponsePayload(request.Payload.OperatorCustId, balanceResult.Balance)
 			};
-
-			await messagePublisher.LogApi(new ApiLogMessage()
-			{
-				Action = "Endgame",
-				Request = request,
-				Response = response
-			}, cancellationToken);
-
-			return response;
+			return await GenerateResponseAsync(request, res, cancellationToken);
 		}
 		catch (Exception ex)
 		{
-			Console.Write(ex.ToString());
-			return new EndGameResult { ErrorCode = 1 };
+			SentrySdk.CaptureException(ex);
+			return await GenerateResponseAsync(request, new EndGameResult { ErrorCode = ErrorMapper.UnspecifiedError }, cancellationToken);
 		}
+	}
+
+	private async ValueTask<List<SPResult>> SettleTransactionsAsync(EndGameRequest request, string providerCode, CancellationToken cancellationToken)
+	{
+		var criteriaList = request.Payload.BetDataSet.Select(betData =>
+		{
+			var criteria = mapper.Map<EndGameCriteria>(betData!);
+			criteria.Seq = request.Seq;
+			criteria.OperatorCustId = request.Payload.OperatorCustId;
+			criteria.GameType = request.Payload.GameType;
+			criteria.GameProviderCode = providerCode;
+			return criteria;
+		});
+		var result = new List<SPResult>();
+		foreach (var criteria in criteriaList)
+		{
+			var spResult = await gameProviderRepository.CallStoredProcedureAsync<EndGameCriteria, SPResult>(criteria, StoreProcedureMapper.BetInsertSP);
+			result.Add(spResult);
+		}
+		return result;
+	}
+
+	private async ValueTask<BalanceResponse> AddBalanceAsync(EndGameRequest request, string providerCode, CancellationToken cancellationToken)
+	{
+		var amount = request.Payload.BetDataSet?.Sum(data => data.Payout);
+		var refId = string.Join('@', request.Payload.BetDataSet.Select(betData => betData.TicketNo));
+
+		if (amount > 0)
+		{
+			return await cashClient.GameProviderAddBalanceAsync(
+				request.Payload.OperatorCustId!,
+				amount!.Value,
+				new Tgs.CashService.ProviderInfo(providerCode!, refId, request.Seq, ActionConstants.EndGame),
+				"EndGame",
+				cancellationToken);
+		}
+		return await cashClient.GameProviderGetBalanceAsync(request.Payload.OperatorCustId!, cancellationToken);
+	}
+
+	private EndGameResult GenerateFailResponse(string errorCode)
+	{
+		return new EndGameResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
+	}
+
+	private async ValueTask<EndGameResult> GenerateResponseAsync(EndGameRequest request, EndGameResult result, CancellationToken cancellationToken)
+	{
+		// TODO: insert into bet.rounds
+		var apiLogMessage = new ApiLogMessage()
+		{
+			Action = ActionConstants.EndGame,
+			Request = request,
+			Response = result
+		};
+		await messagePublisher.LogApi(apiLogMessage, cancellationToken);
+
+		return result;
 	}
 }
