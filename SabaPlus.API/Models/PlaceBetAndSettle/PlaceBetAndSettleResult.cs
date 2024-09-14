@@ -1,14 +1,12 @@
-﻿
-namespace SabaPlus.API.Models.PlaceBetAndSettle;
+﻿namespace SabaPlus.API.Models.PlaceBetAndSettle;
 
-public class PlaceBetAndSettleResult: GameProviderResponse<PlaceBetAndSettlePayload>;
+public class PlaceBetAndSettleResult : GameProviderResponse<PlaceBetAndSettlePayload>;
 
-public record PlaceBetAndSettlePayload(string OperatorCustId, decimal Balance, PlaceBetAndSettleResponseDataSet[]? BetDataSet);
+public record PlaceBetAndSettlePayload(string OperatorCustId, decimal Balance, PlaceBetAndSettleResultDataSet[]? BetDataSet);
 
-public class PlaceBetAndSettleResponseDataSet
-{ 
- public	string TicketNo { get; set;  }
+public class PlaceBetAndSettleResultDataSet
+{
+	public string? TicketNo { get; set; }
 
- public string RefNo { get; set; }
+	public string? RefNo { get; set; }
 }
-

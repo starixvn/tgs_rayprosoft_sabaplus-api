@@ -43,7 +43,7 @@ internal class GameProviderRepository : IGameProviderRepository
 	public async Task<string?> GetGameProviderCodeByGameIdAsync(string gameId)
 	{
 		string key = $"{typeof(GameProviderRepository).Namespace!.Replace(".", "-").ToLower()}:GameProviderCode:{gameId}";
-		if (!memoryCache.TryGetValue(key, out string? providerCode))
+		if (!memoryCache.TryGetValue(key, out string? gameProviderCode))
 		{
 			string sql = @"SELECT gp.code
 						FROM dbo.games as g
@@ -54,15 +54,15 @@ internal class GameProviderRepository : IGameProviderRepository
 			var parameters = new { gameId };
 			using (IDbConnection db = new NpgsqlConnection(connectionString))
 			{
-				providerCode = await db.QueryFirstOrDefaultAsync<string>(sql, parameters);
+				gameProviderCode = await db.QueryFirstOrDefaultAsync<string>(sql, parameters);
 			}
 
-			if (providerCode is not null)
+			if (gameProviderCode is not null)
 			{
-				return memoryCache.Set(key, providerCode, TimeSpan.FromMinutes(cacheSettings.ExpiredTimeInMinute));
+				return memoryCache.Set(key, gameProviderCode, TimeSpan.FromMinutes(cacheSettings.ExpiredTimeInMinute));
 			}
 		}
 
-		return providerCode;
+		return gameProviderCode;
 	}
 }

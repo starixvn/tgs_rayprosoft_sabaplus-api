@@ -1,11 +1,13 @@
-﻿namespace SabaPlus.Repositories.Models;
+﻿using SabaPlus.Common;
+
+namespace SabaPlus.Repositories.Models;
 
 public class EndGameCriteria
 {
 	public string? Seq { get; set; }
 	public string? OperatorCustId { get; set; }
 	public string? TicketNo { get; set; }
-	public string? Action => "EndGame";
+	public string? Action => ActionConstants.EndGame;
 	public string? GameProviderCode { get; set; }
 	public string? GameType { get; set; }
 	public string? GameRoundId { get; set; }

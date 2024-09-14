@@ -2,9 +2,13 @@
 
 public class PlaceBetAndSettleRequest : GameProviderRequest<PlaceBetAndSettleRequestPayload>;
 
-public record PlaceBetAndSettleRequestPayload(string OperatorCustId, string WalletSideToken, string GameType, string IpAddress, PlaceBetAndSettleRequestDataSet[]? BetDataSet);
+public record PlaceBetAndSettleRequestPayload(string OperatorCustId, string WalletSideToken, string? GameType, string? IpAddress, PlaceBetAndSettleDataSet[]? BetDataSet)
+{
+	public string GameProviderCode => WalletSideToken.Split('@')[0];
+	public string? S1GameId => WalletSideToken?.Split('@')[1];
+};
 
-public class PlaceBetAndSettleRequestDataSet
+public class PlaceBetAndSettleDataSet
 {
 	public string? TicketNo { get; set; }
 
@@ -20,7 +24,7 @@ public class PlaceBetAndSettleRequestDataSet
 
 	public decimal NetStake { get; set; }
 
-	public decimal Payout { get;set; }
+	public decimal Payout { get; set; }
 
 	public string? SettleDate { get; set; }
 

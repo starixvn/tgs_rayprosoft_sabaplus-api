@@ -4,7 +4,8 @@ public class PlaceBetRequest : GameProviderRequest<PlaceBetRequestPayload>;
 
 public record PlaceBetRequestPayload(string? OperatorCustId, string? WalletSideToken, string? GameType, string? IpAddress, PlaceBetDataSet[] BetDataSet)
 {
-	public string? ProviderCode => WalletSideToken?.Split('@')[0];
+	public string? GameProviderCode => WalletSideToken?.Split('@')[0];
+	public string? S1GameId => WalletSideToken?.Split('@')[1];
 };
 
 public class PlaceBetDataSet

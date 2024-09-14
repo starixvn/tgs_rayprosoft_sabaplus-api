@@ -1,9 +1,7 @@
 ﻿using System.Data;
-using System.Text.Json;
 using Dapper;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using Npgsql;
 using SabaPlus.Core;
