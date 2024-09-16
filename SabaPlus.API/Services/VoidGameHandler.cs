@@ -1,13 +1,13 @@
-﻿using SabaPlus.API.Messages;
+﻿using MediatR;
+using SabaPlus.API.Messages;
 using SabaPlus.API.Models.VoidGame;
 using SabaPlus.Common;
-using Tgs.ServiceUtility;
 
 namespace SabaPlus.API.Services;
 
-public class VoidGameService(ISabaPlusApiMessagePublishHandler messagePublisher) : IGetService<VoidGameRequest, VoidGameResult>
+public class VoidGameHandler(ISabaPlusApiMessagePublishHandler messagePublisher) : IRequestHandler<VoidGameRequest, VoidGameResult>
 {
-	public async ValueTask<VoidGameResult> GetAsync(VoidGameRequest query, CancellationToken cancellationToken = default)
+	public async Task<VoidGameResult> Handle(VoidGameRequest query, CancellationToken cancellationToken = default)
 	{
 		try
 		{

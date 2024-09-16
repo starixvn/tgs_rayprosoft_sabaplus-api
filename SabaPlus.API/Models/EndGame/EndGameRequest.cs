@@ -1,6 +1,8 @@
-﻿namespace SabaPlus.API.Models.EndGame;
+﻿using MediatR;
 
-public class EndGameRequest : GameProviderRequest<EndGameRequestPayload>;
+namespace SabaPlus.API.Models.EndGame;
+
+public class EndGameRequest : GameProviderRequest<EndGameRequestPayload>, IRequest<EndGameResult>;
 
 public record EndGameRequestPayload(string? OperatorCustId, string? GameType, EndGameDataSet[]? BetDataSet);
 

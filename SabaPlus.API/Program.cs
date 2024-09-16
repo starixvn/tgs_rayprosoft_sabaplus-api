@@ -93,6 +93,7 @@ builder.Services
 	.AddServiceUtiltiyInterceptors();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(Program).Assembly));
 
 var app = builder.Build();
 

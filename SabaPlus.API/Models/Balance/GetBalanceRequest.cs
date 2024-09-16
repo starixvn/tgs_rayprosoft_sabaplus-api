@@ -1,5 +1,7 @@
-﻿namespace SabaPlus.API.Models.Balance;
+﻿using MediatR;
 
-public class GetBalanceRequest : GameProviderRequest<GetBalanceRequestPayload>;
+namespace SabaPlus.API.Models.Balance;
 
-public record GetBalanceRequestPayload (string OperatorCustId, string WalletSideToken, string GameType);
+public class GetBalanceRequest : GameProviderRequest<GetBalanceRequestPayload>, IRequest<GetBalanceResult>;
+
+public record GetBalanceRequestPayload(string OperatorCustId, string WalletSideToken, string GameType);

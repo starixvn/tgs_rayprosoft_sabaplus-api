@@ -1,4 +1,6 @@
-﻿using AutoMapper;
+﻿using System.Threading;
+using AutoMapper;
+using MediatR;
 using SabaPlus.API.Messages;
 using SabaPlus.API.Models;
 using SabaPlus.API.Models.PlaceBetAndSettle;
@@ -7,18 +9,17 @@ using SabaPlus.Core;
 using SabaPlus.Repositories.Helpers;
 using SabaPlus.Repositories.Models;
 using Tgs.CashService.Client;
-using Tgs.ServiceUtility;
 
 namespace SabaPlus.API.Services;
 
-public class PlaceBetAndSettleService(
+public class PlaceBetAndSettleHandler(
 	ISabaPlusApiMessagePublishHandler messagePublisher,
 	ICashServiceClient cashServiceClient,
 	IGameProviderRepository gameProviderRepository,
 	IMapper mapper
-	) : IGetService<PlaceBetAndSettleRequest, PlaceBetAndSettleResult>
+	) : IRequestHandler<PlaceBetAndSettleRequest, PlaceBetAndSettleResult>
 {
-	public async ValueTask<PlaceBetAndSettleResult> GetAsync(PlaceBetAndSettleRequest request, CancellationToken cancellationToken = default)
+	public async Task<PlaceBetAndSettleResult> Handle(PlaceBetAndSettleRequest request, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -28,7 +29,8 @@ public class PlaceBetAndSettleService(
 				return await GenerateResponseAsync(request, GenerateFailResponse(deductBalanceRes.ErrorCode), cancellationToken);
 			}
 
-			var spResults = await InsertTransactionsAsync(request);
+			var criteriaList = GetPlaceBetAndSettleCriterias(request);
+			var spResults = await InsertTransactionsAsync(criteriaList);
 			var failedSp = spResults.Find(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode));
 			if (failedSp != default)
 			{
@@ -49,6 +51,7 @@ public class PlaceBetAndSettleService(
 			{
 				res.ErrorCode = ErrorMapper.GetErrorCode(settleRes?.ErrorCode);
 			}
+			await PublishBetMessage(criteriaList, cancellationToken);
 			return await GenerateResponseAsync(request, res, cancellationToken);
 		}
 		catch (Exception ex)
@@ -58,9 +61,20 @@ public class PlaceBetAndSettleService(
 		}
 	}
 
-	private async ValueTask<List<SPResult>> InsertTransactionsAsync(PlaceBetAndSettleRequest request)
+	private async ValueTask<List<SPResult>> InsertTransactionsAsync(IEnumerable<PlaceBetAndSettleCriteria> criteriaList)
 	{
-		var criteriaList = request.Payload.BetDataSet.Select(betData =>
+		var result = new List<SPResult>();
+		foreach (var criteria in criteriaList)
+		{
+			var spResult = await gameProviderRepository.CallStoredProcedureAsync<PlaceBetAndSettleCriteria, SPResult>(criteria, StoreProcedureMapper.InsertSignalSP);
+			result.Add(spResult);
+		}
+		return result;
+	}
+
+	private IEnumerable<PlaceBetAndSettleCriteria> GetPlaceBetAndSettleCriterias(PlaceBetAndSettleRequest request)
+	{
+		return request.Payload.BetDataSet.Select(betData =>
 		{
 			var criteria = mapper.Map<PlaceBetAndSettleCriteria>(betData!);
 			criteria.TransDate = DateTime.Parse(request.TimeStamp).ToUniversalTime();
@@ -72,13 +86,6 @@ public class PlaceBetAndSettleService(
 			//criteria.GameId = request.Payload.S1GameId;
 			return criteria;
 		});
-		var result = new List<SPResult>();
-		foreach (var criteria in criteriaList)
-		{
-			var spResult = await gameProviderRepository.CallStoredProcedureAsync<PlaceBetAndSettleCriteria, SPResult>(criteria, StoreProcedureMapper.InsertSignalSP);
-			result.Add(spResult);
-		}
-		return result;
 	}
 
 	private async ValueTask<BalanceResponse> DeductBalanceAsync(PlaceBetAndSettleRequest request, CancellationToken cancellationToken)
@@ -116,6 +123,14 @@ public class PlaceBetAndSettleService(
 			cancellationToken);
 	}
 
+	private async ValueTask PublishBetMessage(IEnumerable<PlaceBetAndSettleCriteria> criteriaList, CancellationToken cancellationToken)
+	{
+		foreach (var criteria in criteriaList)
+		{
+			await messagePublisher.HandleBetAsync(HandleMessageMapper.PlaceBetAndSettle(criteria), cancellationToken);
+		}
+	}
+
 	private PlaceBetAndSettleResult GenerateFailResponse(string errorCode)
 	{
 		return new PlaceBetAndSettleResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
@@ -123,7 +138,6 @@ public class PlaceBetAndSettleService(
 
 	private async ValueTask<PlaceBetAndSettleResult> GenerateResponseAsync(PlaceBetAndSettleRequest request, PlaceBetAndSettleResult result, CancellationToken cancellationToken)
 	{
-		// TODO: insert into bet.rounds
 		var apiLogMessage = new ApiLogMessage()
 		{
 			Action = ActionConstants.PlaceBetAndSettle,

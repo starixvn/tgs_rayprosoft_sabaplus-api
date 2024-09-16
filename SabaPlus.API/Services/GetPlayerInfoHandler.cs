@@ -1,20 +1,20 @@
-﻿using SabaPlus.API.Messages;
+﻿using MediatR;
+using SabaPlus.API.Messages;
 using SabaPlus.API.Models;
 using SabaPlus.API.Models.PlayerInfo;
 using SabaPlus.Common;
 using SabaPlus.Core;
 using Tgs.CashService.Client;
-using Tgs.ServiceUtility;
 
 namespace SabaPlus.API.Services;
 
-public class GetPlayerInfoService(
+public class GetPlayerInfoHandler(
 	ISabaPlusApiMessagePublishHandler messagePublisher,
 	IPlayerRepository playerRepository,
 	ICashServiceClient cashClient
-	) : IGetService<GetPlayerInfoRequest, GetPlayerInfoResult>
+	) : IRequestHandler<GetPlayerInfoRequest, GetPlayerInfoResult>
 {
-	public async ValueTask<GetPlayerInfoResult> GetAsync(GetPlayerInfoRequest query, CancellationToken cancellationToken = default)
+	public async Task<GetPlayerInfoResult> Handle(GetPlayerInfoRequest query, CancellationToken cancellationToken = default)
 	{
 		try
 		{

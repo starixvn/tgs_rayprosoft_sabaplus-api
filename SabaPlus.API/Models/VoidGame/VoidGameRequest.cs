@@ -1,8 +1,8 @@
-﻿
+﻿using MediatR;
 
 namespace SabaPlus.API.Models.VoidGame;
 
-public class VoidGameRequest : GameProviderRequest<VoidGameRequestPayload>;
+public class VoidGameRequest : GameProviderRequest<VoidGameRequestPayload>, IRequest<VoidGameResult>;
 
 public record VoidGameRequestPayload(string OperatorCustId, string GameType, VoidGameRequestDataSet[] BetDataSet);
 

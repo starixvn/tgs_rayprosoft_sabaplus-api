@@ -1,13 +1,13 @@
-﻿using SabaPlus.API.Messages;
+﻿using MediatR;
+using SabaPlus.API.Messages;
 using SabaPlus.API.Models.FreeSpin;
 using SabaPlus.Common;
-using Tgs.ServiceUtility;
 
 namespace SabaPlus.API.Services;
 
-public class FreeSpinService(ISabaPlusApiMessagePublishHandler messagePublisher) : IGetService<FreeSpinRequest, FreeSpinResult>
+public class FreeSpinHandler(ISabaPlusApiMessagePublishHandler messagePublisher) : IRequestHandler<FreeSpinRequest, FreeSpinResult>
 {
-	public async ValueTask<FreeSpinResult> GetAsync(FreeSpinRequest query, CancellationToken cancellationToken = default)
+	public async Task<FreeSpinResult> Handle(FreeSpinRequest query, CancellationToken cancellationToken = default)
 	{
 		try
 		{

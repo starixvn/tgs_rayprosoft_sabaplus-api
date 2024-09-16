@@ -7,96 +7,36 @@ using SabaPlus.API.Models.PlaceBetAndSettle;
 using SabaPlus.API.Models.PlayerInfo;
 using SabaPlus.API.Models.EndGame;
 using SabaPlus.API.Models.VoidGame;
-using Tgs.ServiceUtility;
+using MediatR;
 
 namespace SabaPlus.API.Controllers
 {
 	[Route("api/player")]
 	[ApiController]
-	public class PlayerController : ControllerBase
+	public class PlayerController(IMediator mediator) : ControllerBase
 	{
 		[HttpPost("placebet")]
-		public async ValueTask<PlaceBetResult> PlaceBet(
-			[FromServices] IGetService<PlaceBetRequest, PlaceBetResult> service,
-			PlaceBetRequest source
-			)
-		{
-			var result = await service.GetAsync(source, cancellationToken: HttpContext.RequestAborted).ConfigureAwait(false);
-
-			return result;
-		}
+		public Task<PlaceBetResult> PlaceBet(PlaceBetRequest request) => mediator.Send(request);
 
 		[HttpPost("getbalance")]
-		public async ValueTask<GetBalanceResult> GetBalance(
-			[FromServices] IGetService<GetBalanceRequest, GetBalanceResult> service,
-			GetBalanceRequest source
-			)
-		{
-			var result = await service.GetAsync(source, cancellationToken: HttpContext.RequestAborted).ConfigureAwait(false);
-
-			return result;
-		}
+		public Task<GetBalanceResult> GetBalance(GetBalanceRequest request) => mediator.Send(request);
 
 		[HttpPost("endgame")]
-		public async ValueTask<EndGameResult> EndGame(
-			[FromServices] IGetService<EndGameRequest, EndGameResult> service,
-			EndGameRequest source
-			)
-		{
-			var result = await service.GetAsync(source, cancellationToken: HttpContext.RequestAborted).ConfigureAwait(false);
-
-			return result;
-		}
+		public Task<EndGameResult> EndGame(EndGameRequest request) => mediator.Send(request);
 
 		[HttpPost("GetPlayerInfo")]
-		public async ValueTask<GetPlayerInfoResult> GetPlayerInfo(
-			[FromServices] IGetService<GetPlayerInfoRequest, GetPlayerInfoResult> service,
-			GetPlayerInfoRequest source)
-		{
-			var result = await service.GetAsync(source, cancellationToken: HttpContext.RequestAborted).ConfigureAwait(false);
-
-			return result;
-		}
+		public Task<GetPlayerInfoResult> GetPlayerInfo(GetPlayerInfoRequest request) => mediator.Send(request);
 
 		[HttpPost("PlaceBetAndSettle")]
-		public async ValueTask<PlaceBetAndSettleResult> PlaceBetAndSettle(
-			[FromServices] IGetService<PlaceBetAndSettleRequest, PlaceBetAndSettleResult> service,
-			PlaceBetAndSettleRequest source)
-		{
-			var result = await service.GetAsync(source, cancellationToken: HttpContext.RequestAborted).ConfigureAwait(false);
-
-			return result;
-		}
+		public Task<PlaceBetAndSettleResult> PlaceBetAndSettle(PlaceBetAndSettleRequest request) => mediator.Send(request);
 
 		[HttpPost("FreeSpin")]
-		public async ValueTask<FreeSpinResult> FreeSpin(
-			[FromServices] IGetService<FreeSpinRequest, FreeSpinResult> service,
-			FreeSpinRequest source)
-		{
-			var result = await service.GetAsync(source, cancellationToken: HttpContext.RequestAborted).ConfigureAwait(false);
-
-			return result;
-		}
+		public Task<FreeSpinResult> FreeSpin(FreeSpinRequest request) => mediator.Send(request);
 
 		[HttpPost("VoidGame")]
-		public async ValueTask<VoidGameResult> VoidGame(
-		[FromServices] IGetService<VoidGameRequest, VoidGameResult> service,
-		VoidGameRequest source)
-		{
-			var result = await service.GetAsync(source, cancellationToken: HttpContext.RequestAborted).ConfigureAwait(false);
-
-			return result;
-		}
+		public Task<VoidGameResult> VoidGame(VoidGameRequest request) => mediator.Send(request);
 
 		[HttpPost("Bonus")]
-		public async ValueTask<BonusResult> Bonus(
-			[FromServices] IGetService<BonusRequest, BonusResult> service,
-				BonusRequest source)
-		{
-			var result = await service.GetAsync(source, cancellationToken: HttpContext.RequestAborted).ConfigureAwait(false);
-
-			return result;
-		}
-		
+		public Task<BonusResult> Bonus(BonusRequest request) => mediator.Send(request);
 	}
 }

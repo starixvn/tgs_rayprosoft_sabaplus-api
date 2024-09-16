@@ -1,6 +1,8 @@
-﻿namespace SabaPlus.API.Models.FreeSpin;
+﻿using MediatR;
 
-public class FreeSpinRequest: GameProviderRequest<FreeSpinRequestPayload>;
+namespace SabaPlus.API.Models.FreeSpin;
+
+public class FreeSpinRequest : GameProviderRequest<FreeSpinRequestPayload>, IRequest<FreeSpinResult>;
 
 public record FreeSpinRequestPayload(string OperatorCustId, string GameType, string IpAddress, FreeSpinRequestDataSet[] BetDataSet);
 
@@ -23,5 +25,4 @@ public class FreeSpinRequestDataSet
 	public decimal Payout { get; set; }
 
 	public string SettleDate { get; set; }
-
 }

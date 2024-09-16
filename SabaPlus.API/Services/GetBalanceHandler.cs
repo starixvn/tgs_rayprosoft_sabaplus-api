@@ -1,18 +1,18 @@
-﻿using SabaPlus.API.Messages;
+﻿using MediatR;
+using SabaPlus.API.Messages;
 using SabaPlus.API.Models;
 using SabaPlus.API.Models.Balance;
 using SabaPlus.Common;
 using Tgs.CashService.Client;
-using Tgs.ServiceUtility;
 
 namespace SabaPlus.API.Services;
 
-public class GetBalanceService(
+public class GetBalanceHandler(
 	ISabaPlusApiMessagePublishHandler messagePublisher,
 	ICashServiceClient cashClient
-	) : IGetService<GetBalanceRequest, GetBalanceResult>
+	) : IRequestHandler<GetBalanceRequest, GetBalanceResult>
 {
-	public async ValueTask<GetBalanceResult> GetAsync(GetBalanceRequest query, CancellationToken cancellationToken = default)
+	public async Task<GetBalanceResult> Handle(GetBalanceRequest query, CancellationToken cancellationToken = default)
 	{
 		try
 		{

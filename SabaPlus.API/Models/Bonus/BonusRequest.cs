@@ -1,12 +1,12 @@
-﻿
+﻿using MediatR;
 
 namespace SabaPlus.API.Models.Bonus;
 
-public class BonusRequest: GameProviderRequest<BonusRequestPayload>;
+public class BonusRequest : GameProviderRequest<BonusRequestPayload>, IRequest<BonusResult>;
 
 public record BonusRequestPayload(string OperatorCustId, string GameType, BonusDataSet[] BetDataSet);
 
-public class BonusDataSet 
+public class BonusDataSet
 {
 	public string TicketNo { get; set; }
 

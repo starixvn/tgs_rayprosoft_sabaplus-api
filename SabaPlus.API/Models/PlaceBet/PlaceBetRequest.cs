@@ -1,6 +1,8 @@
-﻿namespace SabaPlus.API.Models.PlaceBet;
+﻿using MediatR;
 
-public class PlaceBetRequest : GameProviderRequest<PlaceBetRequestPayload>;
+namespace SabaPlus.API.Models.PlaceBet;
+
+public class PlaceBetRequest : GameProviderRequest<PlaceBetRequestPayload>, IRequest<PlaceBetResult>;
 
 public record PlaceBetRequestPayload(string? OperatorCustId, string? WalletSideToken, string? GameType, string? IpAddress, PlaceBetDataSet[] BetDataSet)
 {

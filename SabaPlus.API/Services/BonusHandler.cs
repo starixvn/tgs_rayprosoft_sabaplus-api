@@ -1,13 +1,14 @@
-﻿using SabaPlus.API.Messages;
+﻿using MediatR;
+using SabaPlus.API.Messages;
 using SabaPlus.API.Models.Bonus;
 using SabaPlus.Common;
 using Tgs.ServiceUtility;
 
 namespace SabaPlus.API.Services;
 
-public class BonusServicee(ISabaPlusApiMessagePublishHandler messagePublisher) : IGetService<BonusRequest, BonusResult>
+public class BonusHandler(ISabaPlusApiMessagePublishHandler messagePublisher) : IRequestHandler<BonusRequest, BonusResult>
 {
-	public async ValueTask<BonusResult> GetAsync(BonusRequest query, CancellationToken cancellationToken = default)
+	public async Task<BonusResult> Handle(BonusRequest request, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -20,7 +21,7 @@ public class BonusServicee(ISabaPlusApiMessagePublishHandler messagePublisher) :
 			await messagePublisher.LogApi(new ApiLogMessage()
 			{
 				Action = "Bonus",
-				Request = query,
+				Request = request,
 				Response = res
 			}, cancellationToken);
 

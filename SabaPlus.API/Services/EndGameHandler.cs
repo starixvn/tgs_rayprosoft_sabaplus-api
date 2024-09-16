@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using MediatR;
 using SabaPlus.API.Messages;
 using SabaPlus.API.Models;
 using SabaPlus.API.Models.EndGame;
@@ -7,18 +8,17 @@ using SabaPlus.Core;
 using SabaPlus.Repositories.Helpers;
 using SabaPlus.Repositories.Models;
 using Tgs.CashService.Client;
-using Tgs.ServiceUtility;
 
 namespace SabaPlus.API.Services;
 
-public class EndGameService(
+public class EndGameHandler(
 	ISabaPlusApiMessagePublishHandler messagePublisher,
 	ICashServiceClient cashClient,
 	IGameProviderRepository gameProviderRepository,
 	IMapper mapper
-	) : IGetService<EndGameRequest, EndGameResult>
+	) : IRequestHandler<EndGameRequest, EndGameResult>
 {
-	public async ValueTask<EndGameResult> GetAsync(EndGameRequest request, CancellationToken cancellationToken = default)
+	public async Task<EndGameResult> Handle(EndGameRequest request, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -109,7 +109,6 @@ public class EndGameService(
 
 	private async ValueTask<EndGameResult> GenerateResponseAsync(EndGameRequest request, EndGameResult result, CancellationToken cancellationToken)
 	{
-		// TODO: insert into bet.rounds
 		var apiLogMessage = new ApiLogMessage()
 		{
 			Action = ActionConstants.EndGame,
