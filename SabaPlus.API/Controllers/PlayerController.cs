@@ -8,6 +8,7 @@ using SabaPlus.API.Models.PlayerInfo;
 using SabaPlus.API.Models.EndGame;
 using SabaPlus.API.Models.VoidGame;
 using MediatR;
+using SabaPlus.API.Middlewares.Attributes;
 
 namespace SabaPlus.API.Controllers
 {
@@ -22,6 +23,7 @@ namespace SabaPlus.API.Controllers
 		public Task<GetBalanceResult> GetBalance(GetBalanceRequest request) => mediator.Send(request);
 
 		[HttpPost("endgame")]
+		[ReadableBody]
 		public Task<EndGameResult> EndGame(EndGameRequest request) => mediator.Send(request);
 
 		[HttpPost("GetPlayerInfo")]
