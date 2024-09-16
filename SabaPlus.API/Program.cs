@@ -33,10 +33,18 @@ builder.Services
 	.AddMemoryCache();
 
 builder.Services
+	.AddKeyedSingleton("Nats", (sp, _) => new NatsConnection(NatsOpts.Default with
+	{
+		Url = builder.Configuration.GetConnectionString("Nats")!,
+		SerializerRegistry = TgsNatsSerializerRegistration.Default
+	}))
 	.AddMessageQueue()
 	.AddInProcessMessageQueue(configuration =>
 		configuration.AddHandler<ApiLogsMessageHandler>(Constants.ApiLogsExchange))
-	.AddInProcessGlobPatternExchange(Constants.InprocessGlobExchange);
+	.AddNatsMessageQueue(config => config.ConfigureResolveConnection(sp => sp.GetRequiredKeyedService<NatsConnection>("Nats")))
+	.ClearAllExchanges()
+	.AddInProcessGlobPatternExchange(Constants.InprocessGlobExchange)
+	.AddNatsGlobPatternExchange(Constants.HandleBetPublish);
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {

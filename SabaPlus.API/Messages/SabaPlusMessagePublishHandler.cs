@@ -11,4 +11,9 @@ public class SabaPlusMessagePublishHandler(IMessageSender messageSender) : ISaba
 	{
 		await messageSender.PublishAsync(subject: Constants.ApiLogsExchange, data: JsonSerializer.Serialize(mesage), cancellationToken);
 	}
+
+	public async Task HandleBetAsync(HandleBetMessage mesage, CancellationToken cancellationToken = default)
+	{
+		await messageSender.PublishAsync(subject: Constants.HandleBetPublish, data: JsonSerializer.Serialize(mesage), cancellationToken);
+	}
 }

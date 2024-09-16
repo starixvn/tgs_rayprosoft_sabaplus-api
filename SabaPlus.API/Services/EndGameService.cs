@@ -24,7 +24,8 @@ public class EndGameService(
 		{
 			var gameProviderCode = await gameProviderRepository.GetGameProviderCodeByGameIdAsync(request.Payload.BetDataSet?.FirstOrDefault()?.GameId!);
 
-			var spResults = await SettleTransactionsAsync(request, gameProviderCode);
+			var criteriaList = GetEndGameCriteriasAsync(request, gameProviderCode);
+			var spResults = await SettleTransactionsAsync(criteriaList);
 			var failedSp = spResults.Find(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode!));
 
 			if (failedSp != default)
@@ -42,6 +43,7 @@ public class EndGameService(
 			{
 				Payload = new EndGameResponsePayload(request.Payload.OperatorCustId, balanceResult.Balance)
 			};
+			await PublishMessageAsync(criteriaList, cancellationToken);
 			return await GenerateResponseAsync(request, res, cancellationToken);
 		}
 		catch (Exception ex)
@@ -51,9 +53,20 @@ public class EndGameService(
 		}
 	}
 
-	private async ValueTask<List<SPResult>> SettleTransactionsAsync(EndGameRequest request, string gameProviderCode)
+	private async ValueTask<List<SPResult>> SettleTransactionsAsync(IEnumerable<EndGameCriteria> criteriaList)
 	{
-		var criteriaList = request.Payload.BetDataSet.Select(betData =>
+		var result = new List<SPResult>();
+		foreach (var criteria in criteriaList)
+		{
+			var spResult = await gameProviderRepository.CallStoredProcedureAsync<EndGameCriteria, SPResult>(criteria, StoreProcedureMapper.InsertSignalSP);
+			result.Add(spResult);
+		}
+		return result;
+	}
+
+	private IEnumerable<EndGameCriteria> GetEndGameCriteriasAsync(EndGameRequest request, string gameProviderCode)
+	{
+		return request.Payload.BetDataSet.Select(betData =>
 		{
 			var criteria = mapper.Map<EndGameCriteria>(betData!);
 			criteria.Seq = request.Seq;
@@ -62,13 +75,6 @@ public class EndGameService(
 			criteria.GameProviderCode = gameProviderCode;
 			return criteria;
 		});
-		var result = new List<SPResult>();
-		foreach (var criteria in criteriaList)
-		{
-			var spResult = await gameProviderRepository.CallStoredProcedureAsync<EndGameCriteria, SPResult>(criteria, StoreProcedureMapper.InsertSignalSP);
-			result.Add(spResult);
-		}
-		return result;
 	}
 
 	private async ValueTask<BalanceResponse> AddBalanceAsync(EndGameRequest request, string gameProviderCode, CancellationToken cancellationToken)
@@ -82,10 +88,18 @@ public class EndGameService(
 				request.Payload.OperatorCustId!,
 				amount!.Value,
 				new Tgs.CashService.ProviderInfo(gameProviderCode!, refId, request.Seq, ActionConstants.EndGame),
-				"EndGame",
+				string.Empty,
 				cancellationToken);
 		}
 		return await cashClient.GameProviderGetBalanceAsync(request.Payload.OperatorCustId!, cancellationToken);
+	}
+
+	private async ValueTask PublishMessageAsync(IEnumerable<EndGameCriteria> criteriaList, CancellationToken cancellationToken)
+	{
+		foreach (var criteria in criteriaList)
+		{
+			await messagePublisher.HandleBetAsync(HandleMessageMapper.EndGame(criteria), cancellationToken);
+		}
 	}
 
 	private EndGameResult GenerateFailResponse(string errorCode)

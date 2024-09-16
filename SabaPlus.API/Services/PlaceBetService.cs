@@ -34,7 +34,8 @@ public class PlaceBetGetService(
 				return await GenerateResponseAsync(request, GenerateFailResponse(balanceResult.ErrorCode), cancellationToken);
 			}
 
-			var spResults = await InsertTransactionsAsync(request);
+			var criteriaList = GetPlaceBetCriterias(request);
+			var spResults = await InsertTransactionsAsync(criteriaList);
 			var failedSp = spResults.Find(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode!));
 			if (failedSp != default)
 			{
@@ -48,6 +49,8 @@ public class PlaceBetGetService(
 			{
 				Payload = new PlaceBetResponsePayload(playerCode, balanceResult.Balance, betDataSet.ToArray())
 			};
+
+			PublishBetAsync(criteriaList, cancellationToken);
 			return await GenerateResponseAsync(request, res, cancellationToken);
 		}
 		catch (Exception ex)
@@ -70,29 +73,6 @@ public class PlaceBetGetService(
 			).ConfigureAwait(false);
 	}
 
-	private async Task<List<SPResult>> InsertTransactionsAsync(PlaceBetRequest request)
-	{
-		var criteriaList = request.Payload.BetDataSet.Select(betData =>
-		{
-			var criteria = mapper.Map<PlaceBetCriteria>(betData!);
-			criteria.TransDate = DateTime.Parse(request.TimeStamp).ToUniversalTime();
-			criteria.Seq = request.Seq;
-			criteria.OperatorCustId = request.Payload.OperatorCustId;
-			criteria.GameType = request.Payload.GameType;
-			criteria.IpAddress = request.Payload.IpAddress;
-			criteria.GameProviderCode = request.Payload.GameProviderCode;
-			//criteria.GameId = request.Payload.S1GameId;
-			return criteria;
-		});
-		var result = new List<SPResult>();
-		foreach (var criteria in criteriaList)
-		{
-			var spResult = await gameProviderRepository.CallStoredProcedureAsync<PlaceBetCriteria, SPResult>(criteria, StoreProcedureMapper.InsertSignalSP);
-			result.Add(spResult);
-		}
-		return result;
-	}
-
 	private async ValueTask RefundBalanceAsync(PlaceBetRequest request, CancellationToken cancellationToken)
 	{
 		var betAmount = request.Payload.BetDataSet.Sum(betData => betData.ActualStake)!.Value;
@@ -104,6 +84,41 @@ public class PlaceBetGetService(
 			string.Empty,
 			cancellationToken
 			).ConfigureAwait(false);
+	}
+
+	private async Task<List<SPResult>> InsertTransactionsAsync(IEnumerable<PlaceBetCriteria> criteriaList)
+	{
+		var result = new List<SPResult>();
+		foreach (var criteria in criteriaList)
+		{
+			var spResult = await gameProviderRepository.CallStoredProcedureAsync<PlaceBetCriteria, SPResult>(criteria, StoreProcedureMapper.InsertSignalSP);
+			result.Add(spResult);
+		}
+		return result;
+	}
+
+	private IEnumerable<PlaceBetCriteria> GetPlaceBetCriterias(PlaceBetRequest request)
+	{
+		return request.Payload.BetDataSet.Select(betData =>
+		{
+			var criteria = mapper.Map<PlaceBetCriteria>(betData!);
+			criteria.TransDate = DateTime.Parse(request.TimeStamp).ToUniversalTime();
+			criteria.Seq = request.Seq;
+			criteria.OperatorCustId = request.Payload.OperatorCustId;
+			criteria.GameType = request.Payload.GameType;
+			criteria.IpAddress = request.Payload.IpAddress;
+			criteria.GameProviderCode = request.Payload.GameProviderCode;
+			//criteria.GameId = request.Payload.S1GameId;
+			return criteria;
+		});
+	}
+
+	private async Task PublishBetAsync(IEnumerable<PlaceBetCriteria> criteriaList, CancellationToken cancellationToken)
+	{
+		foreach (var criteria in criteriaList)
+		{
+			await messagePublisher.HandleBetAsync(HandleMessageMapper.PlaceBet(criteria), cancellationToken);
+		}
 	}
 
 	private PlaceBetResult GenerateFailResponse(string errorCode)
