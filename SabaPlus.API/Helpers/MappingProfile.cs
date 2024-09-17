@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using AutoMapper;
 using Newtonsoft.Json;
+using SabaPlus.API.Models.Bonus;
 using SabaPlus.API.Models.EndGame;
 using SabaPlus.API.Models.FreeSpin;
 using SabaPlus.API.Models.PlaceBet;
@@ -26,5 +27,8 @@ public class MappingProfile : Profile
 		CreateMap<FreeSpinDataSet, FreeSpinCriteria>()
 			.ForMember(dest => dest.ExternalGameId, opt => opt.MapFrom(src => src.GameId))
 			.ForMember(dest => dest.SettleDate, opt => opt.MapFrom(src => DateTime.Parse(src.SettleDate!, null, DateTimeStyles.RoundtripKind).ToUniversalTime().AddHours(4)));
+		CreateMap<BonusDataSet, BonusCriteria>()
+				.ForMember(dest => dest.ExternalGameId, opt => opt.MapFrom(src => src.GameId))
+				.ForMember(dest => dest.SettleDate, opt => opt.MapFrom(src => DateTime.Parse(src.SettleDate!, null, DateTimeStyles.RoundtripKind).ToUniversalTime().AddHours(4)));
 	}
 }

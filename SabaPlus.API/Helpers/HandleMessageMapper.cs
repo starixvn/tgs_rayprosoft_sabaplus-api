@@ -68,4 +68,21 @@ public static class HandleMessageMapper
 			TransactionTime = criteria.TransDate,
 		};
 	}
+
+	public static HandleBetMessage Bonus(BonusCriteria criteria, long refNo)
+	{
+		return new HandleBetMessage()
+		{
+			GameProviderCode = criteria.GameProviderCode,
+			GameExternalId = criteria.ExternalGameId,
+			Action = "PlaceBetAndSettle",
+			PlayerCode = criteria.OperatorCustId,
+			TxId = criteria.GameRoundId,
+			LicenseeTxid = refNo,
+			Payout = criteria.Payout ?? 0,
+			WinlostDate = criteria.SettleDate,
+			ExtraStatus = ActionConstants.Bonus,
+			TransactionTime = criteria.TransDate,
+		};
+	}
 }
