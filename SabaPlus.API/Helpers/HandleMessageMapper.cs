@@ -5,7 +5,7 @@ namespace SabaPlus.API;
 
 public static class HandleMessageMapper
 {
-	public static HandleBetMessage PlaceBet(PlaceBetCriteria criteria)
+	public static HandleBetMessage PlaceBet(PlaceBetCriteria criteria, long refNo)
 	{
 		return new HandleBetMessage()
 		{
@@ -14,6 +14,7 @@ public static class HandleMessageMapper
 			Action = "ConfirmBet",
 			PlayerCode = criteria.OperatorCustId,
 			TxId = criteria.TicketNo,
+			LicenseeTxid = refNo,
 			TransactionTime = criteria.TransDate,
 			ExtraStatus = ActionConstants.PlaceBet,
 		};
@@ -34,16 +35,16 @@ public static class HandleMessageMapper
 		};
 	}
 
-	public static HandleBetMessage PlaceBetAndSettle(PlaceBetAndSettleCriteria criteria)
+	public static HandleBetMessage PlaceBetAndSettle(PlaceBetAndSettleCriteria criteria, long refNo)
 	{
 		return new HandleBetMessage()
 		{
-
 			GameProviderCode = criteria.GameProviderCode,
 			GameExternalId = criteria.ExternalGameId,
 			Action = "PlaceBetAndSettle",
 			PlayerCode = criteria.OperatorCustId,
 			TxId = criteria.GameRoundId,
+			LicenseeTxid = refNo,
 			Payout = criteria.Payout ?? 0,
 			WinlostDate = criteria.SettleDate,
 			ExtraStatus = ActionConstants.PlaceBetAndSettle,
@@ -51,18 +52,20 @@ public static class HandleMessageMapper
 		};
 	}
 
-	public static HandleBetMessage FreeSpin(FreeSpinCriteria criteria)
+	public static HandleBetMessage FreeSpin(FreeSpinCriteria criteria, long refNo)
 	{
 		return new HandleBetMessage()
 		{
 			GameProviderCode = criteria.GameProviderCode,
 			GameExternalId = criteria.ExternalGameId,
-			Action = "Settle",
+			Action = "PlaceBetAndSettle",
 			PlayerCode = criteria.OperatorCustId,
 			TxId = criteria.GameRoundId,
+			LicenseeTxid = refNo,
 			Payout = criteria.Payout ?? 0,
 			WinlostDate = criteria.SettleDate,
 			ExtraStatus = ActionConstants.FreeSpin,
+			TransactionTime = criteria.TransDate,
 		};
 	}
 }

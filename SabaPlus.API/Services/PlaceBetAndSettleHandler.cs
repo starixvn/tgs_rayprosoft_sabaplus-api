@@ -51,7 +51,7 @@ public class PlaceBetAndSettleHandler(
 			{
 				res.ErrorCode = ErrorMapper.GetErrorCode(settleRes?.ErrorCode);
 			}
-			await PublishBetMessage(criteriaList, cancellationToken);
+			await PublishBetMessage(criteriaList, spResults, cancellationToken);
 			return await GenerateResponseAsync(request, res, cancellationToken);
 		}
 		catch (Exception ex)
@@ -123,11 +123,11 @@ public class PlaceBetAndSettleHandler(
 			cancellationToken);
 	}
 
-	private async ValueTask PublishBetMessage(IEnumerable<PlaceBetAndSettleCriteria> criteriaList, CancellationToken cancellationToken)
+	private async ValueTask PublishBetMessage(IEnumerable<PlaceBetAndSettleCriteria> criteriaList, List<SPResult> spResults, CancellationToken cancellationToken)
 	{
-		foreach (var criteria in criteriaList)
+		foreach (var item in criteriaList.Select((criteria, i) => (criteria, i)))
 		{
-			await messagePublisher.HandleBetAsync(HandleMessageMapper.PlaceBetAndSettle(criteria), cancellationToken);
+			await messagePublisher.HandleBetAsync(HandleMessageMapper.PlaceBetAndSettle(item.criteria, spResults[item.i].RefNo!.Value), cancellationToken);
 		}
 	}
 

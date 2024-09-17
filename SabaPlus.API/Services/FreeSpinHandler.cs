@@ -45,7 +45,7 @@ public class FreeSpinHandler(
 				Payload = new FreeSpinPayload(request.Payload.OperatorCustId, balanceResult.Balance, betDataSet.ToArray())
 			};
 
-			await PublishBetMessageAsync(criteriaList, cancellationToken);
+			await PublishBetMessageAsync(criteriaList, spResults, cancellationToken);
 			return await GenerateResponseAsync(request, res, cancellationToken);
 		}
 		catch (Exception ex)
@@ -98,11 +98,11 @@ public class FreeSpinHandler(
 		return await cashClient.GameProviderGetBalanceAsync(request.Payload.OperatorCustId!, cancellationToken);
 	}
 
-	private async ValueTask PublishBetMessageAsync(IEnumerable<FreeSpinCriteria> criteriaList, CancellationToken cancellationToken)
+	private async ValueTask PublishBetMessageAsync(IEnumerable<FreeSpinCriteria> criteriaList, List<SPResult> spResults, CancellationToken cancellationToken)
 	{
-		foreach (var criteria in criteriaList)
+		foreach (var item in criteriaList.Select((criteria, i) => (criteria, i)))
 		{
-			await messagePublisher.HandleBetAsync(HandleMessageMapper.FreeSpin(criteria), cancellationToken);
+			await messagePublisher.HandleBetAsync(HandleMessageMapper.FreeSpin(item.criteria, spResults[item.i].RefNo!.Value), cancellationToken);
 		}
 	}
 

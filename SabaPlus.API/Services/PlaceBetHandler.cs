@@ -50,7 +50,7 @@ public class PlaceBetGetHandler(
 				Payload = new PlaceBetResponsePayload(playerCode, balanceResult.Balance, betDataSet.ToArray())
 			};
 
-			await PublishBetAsync(criteriaList, cancellationToken);
+			await PublishBetAsync(criteriaList, spResults, cancellationToken);
 			return await GenerateResponseAsync(request, res, cancellationToken);
 		}
 		catch (Exception ex)
@@ -113,11 +113,11 @@ public class PlaceBetGetHandler(
 		});
 	}
 
-	private async Task PublishBetAsync(IEnumerable<PlaceBetCriteria> criteriaList, CancellationToken cancellationToken)
+	private async Task PublishBetAsync(IEnumerable<PlaceBetCriteria> criteriaList, List<SPResult> spResults, CancellationToken cancellationToken)
 	{
-		foreach (var criteria in criteriaList)
+		foreach (var item in criteriaList.Select((criteria, i) => (criteria, i)))
 		{
-			await messagePublisher.HandleBetAsync(HandleMessageMapper.PlaceBet(criteria), cancellationToken);
+			await messagePublisher.HandleBetAsync(HandleMessageMapper.PlaceBet(item.criteria, spResults[item.i].RefNo!.Value), cancellationToken);
 		}
 	}
 
