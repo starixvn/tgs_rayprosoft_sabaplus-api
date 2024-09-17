@@ -85,13 +85,13 @@ public class EndGameHandler(
 		if (amount > 0)
 		{
 			return await cashClient.GameProviderAddBalanceAsync(
-				request.Payload.OperatorCustId!,
+				request.Payload.OperatorCustId!.ToPlayerCode(),
 				amount!.Value,
 				new Tgs.CashService.ProviderInfo(gameProviderCode!, refId, request.Seq, ActionConstants.EndGame),
 				string.Empty,
 				cancellationToken);
 		}
-		return await cashClient.GameProviderGetBalanceAsync(request.Payload.OperatorCustId!, cancellationToken);
+		return await cashClient.GameProviderGetBalanceAsync(request.Payload.OperatorCustId!.ToPlayerCode(), cancellationToken);
 	}
 
 	private async ValueTask PublishMessageAsync(IEnumerable<EndGameCriteria> criteriaList, CancellationToken cancellationToken)

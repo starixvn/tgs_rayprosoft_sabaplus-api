@@ -90,13 +90,13 @@ public class BonusHandler(
 		if (amount > 0)
 		{
 			return await cashClient.GameProviderAddBalanceAsync(
-				request.Payload.OperatorCustId!,
+				request.Payload.OperatorCustId!.ToPlayerCode(),
 				amount,
 				new Tgs.CashService.ProviderInfo(gameProviderCode!, refId, request.Seq, ActionConstants.EndGame),
 			string.Empty,
 				cancellationToken);
 		}
-		return await cashClient.GameProviderGetBalanceAsync(request.Payload.OperatorCustId!, cancellationToken);
+		return await cashClient.GameProviderGetBalanceAsync(request.Payload.OperatorCustId!.ToPlayerCode(), cancellationToken);
 	}
 
 	private async ValueTask PublishBetMessageAsync(BonusCriteria criteria, long? refNo, CancellationToken cancellationToken)

@@ -23,7 +23,6 @@ public class PlaceBetGetHandler(
 	{
 		try
 		{
-			var playerCode = request.Payload.OperatorCustId;
 			var betAmount = request.Payload.BetDataSet.Sum(betData => betData.ActualStake)!.Value;
 			var refId = string.Join('@', request.Payload.BetDataSet.Select(betData => betData.TicketNo));
 			var seq = request.Seq;
@@ -47,7 +46,7 @@ public class PlaceBetGetHandler(
 								new PlaceBetResultDataSet { RefNo = spResult.RefNo.ToString(), TicketNo = request.Payload.BetDataSet[index].TicketNo });
 			var res = new PlaceBetResult
 			{
-				Payload = new PlaceBetResponsePayload(playerCode, balanceResult.Balance, betDataSet.ToArray())
+				Payload = new PlaceBetResponsePayload(request.Payload.OperatorCustId, balanceResult.Balance, betDataSet.ToArray())
 			};
 
 			await PublishBetAsync(criteriaList, spResults, cancellationToken);
@@ -65,7 +64,7 @@ public class PlaceBetGetHandler(
 		var betAmount = request.Payload.BetDataSet.Sum(betData => betData.ActualStake)!.Value;
 		var refId = string.Join('@', request.Payload.BetDataSet.Select(betData => betData.TicketNo));
 		return await cashClient.GameProviderDeductBalanceAsync(
-			request.Payload.OperatorCustId!,
+			request.Payload.OperatorCustId!.ToPlayerCode(),
 			betAmount,
 			new ProviderInfo(request.Payload.GameProviderCode!, refId, request.Seq, ActionConstants.PlaceBet),
 			string.Empty,
@@ -78,7 +77,7 @@ public class PlaceBetGetHandler(
 		var betAmount = request.Payload.BetDataSet.Sum(betData => betData.ActualStake)!.Value;
 		var refId = string.Join('@', request.Payload.BetDataSet.Select(betData => betData.TicketNo));
 		await cashClient.GameProviderAddBalanceAsync(
-			request.Payload.OperatorCustId!,
+			request.Payload.OperatorCustId!.ToPlayerCode(),
 			betAmount,
 			new ProviderInfo(request.Payload.GameProviderCode!, refId, request.Seq, ActionConstants.PlaceBetFail),
 			string.Empty,

@@ -16,7 +16,7 @@ public class GetBalanceHandler(
 	{
 		try
 		{
-			var playerCode = query.Payload.OperatorCustId;
+			var playerCode = query.Payload.OperatorCustId.ToPlayerCode();
 			var balanceResult = await cashClient.GameProviderGetBalanceAsync(playerCode, cancellationToken).ConfigureAwait(false);
 			var res = new GetBalanceResult
 			{

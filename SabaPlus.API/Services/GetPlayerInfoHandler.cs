@@ -18,7 +18,7 @@ public class GetPlayerInfoHandler(
 	{
 		try
 		{
-			var playerCode = query.Payload.OperatorCustId;
+			var playerCode = query.Payload.OperatorCustId.ToPlayerCode();
 			var balanceResult = (await cashClient.GameProviderGetBalanceAsync(playerCode, cancellationToken).ConfigureAwait(false));
 			var res = new GetPlayerInfoResult();
 
@@ -33,7 +33,7 @@ public class GetPlayerInfoHandler(
 
 				res.Payload = new GetPlayerInfoResponsePayload
 				{
-					OperatorCustId = playerInfo!.PlayerCode,
+					OperatorCustId = query.Payload.OperatorCustId,
 					UserName = playerInfo.Username,
 					CurrencyISO = playerInfo.CurrencyCode,
 					Currency = playerInfo.CurrencyCode,

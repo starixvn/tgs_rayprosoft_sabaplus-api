@@ -93,7 +93,7 @@ public class PlaceBetAndSettleHandler(
 		var betAmount = request.Payload.BetDataSet.Sum(bet => bet.ActualStake);
 		var refId = string.Join('@', request.Payload.BetDataSet.Select(bet => bet.TicketNo));
 		return await cashServiceClient.GameProviderDeductBalanceAsync(
-			request.Payload.OperatorCustId,
+			request.Payload.OperatorCustId.ToPlayerCode(),
 			betAmount,
 			new Tgs.CashService.ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, ActionConstants.PlaceBetAndSettlePlaceBet),
 			string.Empty,
@@ -116,7 +116,7 @@ public class PlaceBetAndSettleHandler(
 	{
 		var refId = string.Join('@', request.Payload.BetDataSet.Select(bet => bet.TicketNo));
 		return await cashServiceClient.GameProviderAddBalanceAsync(
-			request.Payload.OperatorCustId,
+			request.Payload.OperatorCustId.ToPlayerCode(),
 			amount,
 			new Tgs.CashService.ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, action),
 			string.Empty,
