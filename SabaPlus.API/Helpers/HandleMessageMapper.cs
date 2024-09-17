@@ -38,14 +38,16 @@ public static class HandleMessageMapper
 	{
 		return new HandleBetMessage()
 		{
+
 			GameProviderCode = criteria.GameProviderCode,
 			GameExternalId = criteria.ExternalGameId,
-			Action = "Settle",
+			Action = "PlaceBetAndSettle",
 			PlayerCode = criteria.OperatorCustId,
 			TxId = criteria.GameRoundId,
 			Payout = criteria.Payout ?? 0,
 			WinlostDate = criteria.SettleDate,
 			ExtraStatus = ActionConstants.PlaceBetAndSettle,
+			TransactionTime = criteria.TransDate,
 		};
 	}
 
