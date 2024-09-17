@@ -50,7 +50,7 @@ public class PlaceBetGetHandler(
 				Payload = new PlaceBetResponsePayload(playerCode, balanceResult.Balance, betDataSet.ToArray())
 			};
 
-			PublishBetAsync(criteriaList, cancellationToken);
+			await PublishBetAsync(criteriaList, cancellationToken);
 			return await GenerateResponseAsync(request, res, cancellationToken);
 		}
 		catch (Exception ex)

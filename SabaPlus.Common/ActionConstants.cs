@@ -9,4 +9,5 @@ public static class ActionConstants
 	public static readonly string PlaceBetAndSettlePlaceBet = "PlaceBetAndSettle-PlaceBet";
 	public static readonly string PlaceBetAndSettleSettle = "PlaceBetAndSettle-Settle";
 	public static readonly string PlaceBetAndSettleFail = "PlaceBetAndSettle-Fail";
+	public static readonly string FreeSpin = "FreeSpin";
 }

@@ -48,4 +48,19 @@ public static class HandleMessageMapper
 			ExtraStatus = ActionConstants.PlaceBetAndSettle,
 		};
 	}
+
+	public static HandleBetMessage FreeSpin(FreeSpinCriteria criteria)
+	{
+		return new HandleBetMessage()
+		{
+			GameProviderCode = criteria.GameProviderCode,
+			GameExternalId = criteria.ExternalGameId,
+			Action = "Settle",
+			PlayerCode = criteria.OperatorCustId,
+			TxId = criteria.GameRoundId,
+			Payout = criteria.Payout ?? 0,
+			WinlostDate = criteria.SettleDate,
+			ExtraStatus = ActionConstants.FreeSpin,
+		};
+	}
 }
