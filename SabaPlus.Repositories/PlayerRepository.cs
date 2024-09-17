@@ -22,7 +22,7 @@ internal class PlayerRepository : IPlayerRepository
 		cacheSettings = new CacheSettingsOptions(60);
 	}
 
-	public async ValueTask<PlayerInfo?> GetPlayerInfoByPlayerCodeAsync(string playerCode, CancellationToken cancellationToken = default)
+	public async ValueTask<PlayerInfo?> GetPlayerInfoByPlayerCodeAsync(string playerCode, string gameProviderCode, CancellationToken cancellationToken = default)
 	{
 		string key = $"{typeof(PlayerRepository).Namespace!.Replace(".", "-").ToLower()}:PlayerInfo:{playerCode}";
 		if (!memoryCache.TryGetValue(key, out PlayerInfo? playerInfo))
@@ -33,13 +33,16 @@ internal class PlayerRepository : IPlayerRepository
 							SELECT
 								p.player_code AS PlayerCode,
 								p.username AS Username,
-								p.default_wallet_currency_code AS CurrencyCode
-							FROM
-								dbo.Players p
-							WHERE
-								p.player_code = @PlayerCode;";
+								gpc.game_provider_currency_code AS CurrencyCode
+							FROM dbo.Players as p
+							INNER JOIN dbo.game_providers as gp
+							ON gp.code = @gameProviderCode
+							INNER JOIN dbo.game_provider_currencies as gpc
+							ON gp.id = gpc.game_provider_id
+							AND gpc.currency_code = p.default_wallet_currency_code
+							WHERE p.player_code = @playerCode;";
 
-				var parameters = new { PlayerCode = playerCode };
+				var parameters = new { playerCode, gameProviderCode };
 				playerInfo = await db.QueryFirstOrDefaultAsync<PlayerInfo>(sql, parameters);
 			}
 
