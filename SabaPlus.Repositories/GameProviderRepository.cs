@@ -40,18 +40,19 @@ internal class GameProviderRepository : IGameProviderRepository
 		}
 	}
 
-	public async Task<string?> GetGameProviderCodeByGameIdAsync(string gameId)
+	public async Task<string?> GetGameProviderCodeByGameTypeAsync(string gameType)
 	{
-		string key = $"{typeof(GameProviderRepository).Namespace!.Replace(".", "-").ToLower()}:GameProviderCode:{gameId}";
+		string key = $"{typeof(GameProviderRepository).Namespace!.Replace(".", "-").ToLower()}:GameProviderCode:{gameType}";
 		if (!memoryCache.TryGetValue(key, out string? gameProviderCode))
 		{
 			string sql = @"SELECT gp.code
-						FROM dbo.games as g
-						INNER JOIN dbo.game_providers as gp
-						ON g.game_provider_id = gp.id
-						WHERE g.external_id = @gameId
-						AND gp.code LIKE 'SABAPLUS%'";
-			var parameters = new { gameId };
+							FROM dbo.sub_game_providers as sgp
+							INNER JOIN dbo.game_providers as gp
+							ON sgp.game_provider_id = gp.id
+							WHERE UPPER(sgp.code) = UPPER(@gameType)
+							AND gp.code LIKE 'SABAPLUS%'
+							LIMIT 1;";
+			var parameters = new { gameType };
 			using (IDbConnection db = new NpgsqlConnection(connectionString))
 			{
 				gameProviderCode = await db.QueryFirstOrDefaultAsync<string>(sql, parameters);

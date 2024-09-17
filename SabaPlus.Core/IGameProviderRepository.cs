@@ -4,5 +4,5 @@ public interface IGameProviderRepository
 {
 	Task<TResult> CallStoredProcedureAsync<TCriteria, TResult>(TCriteria criteria, string spName);
 
-	Task<string?> GetGameProviderCodeByGameIdAsync(string gameId);
+	Task<string?> GetGameProviderCodeByGameTypeAsync(string gameType);
 }

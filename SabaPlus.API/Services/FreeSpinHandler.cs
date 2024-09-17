@@ -22,7 +22,7 @@ public class FreeSpinHandler(
 	{
 		try
 		{
-			var gameProviderCode = await gameProviderRepository.GetGameProviderCodeByGameIdAsync(request.Payload.BetDataSet?.FirstOrDefault()?.GameId!);
+			var gameProviderCode = await gameProviderRepository.GetGameProviderCodeByGameTypeAsync(request.Payload.GameType);
 
 			var criteriaList = GetFreeSpinCriterias(request, gameProviderCode);
 			var spResults = await InsertTransactionsAsync(criteriaList);
