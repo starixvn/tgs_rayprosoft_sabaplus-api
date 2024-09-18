@@ -7,7 +7,7 @@ using SabaPlus.Common;
 using SabaPlus.Core;
 using SabaPlus.Repositories.Helpers;
 using SabaPlus.Repositories.Models;
-using Sentry;
+using Tgs.CashService;
 using Tgs.CashService.Client;
 
 namespace SabaPlus.API.Services;
@@ -24,40 +24,89 @@ public class PlaceBetAndSettleHandler(
 	{
 		try
 		{
-			var deductBalanceRes = await DeductBalanceAsync(request, cancellationToken).ConfigureAwait(false);
-			if (!ErrorMapper.IsSuccess(deductBalanceRes.ErrorCode))
+			BalanceResponse balanceResponse = null;
+			//TODO must calculate adjust amount, if > 0 then add, < 0 then deduct
+			var playerCode = request.Payload.OperatorCustId.ToPlayerCode();
+
+			var bets = request.Payload.BetDataSet;
+
+			var betAmount = bets?.Sum(bet => bet.ActualStake);
+			var payout = bets?.Sum(bet => bet.Payout);
+			var adjustAmount = (payout - betAmount) ?? 0;
+
+			var refId = string.Join('@', bets.Select(bet => bet.TicketNo));
+
+			//TODO deduct
+			if (adjustAmount < 0)
 			{
-				return GenerateFailResponse(deductBalanceRes.ErrorCode, deductBalanceRes.ErrorMessage);
+				balanceResponse = await cashServiceClient.GameProviderDeductBalanceAsync(
+				playerCode,
+				adjustAmount,
+				new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, ActionConstants.PlaceBetAndSettlePlaceBet),
+				string.Empty,
+				cancellationToken);
+
+				if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
+				{
+					return GenerateFailResponse(balanceResponse.ErrorCode, balanceResponse.ErrorMessage);
+				}
 			}
 
 			var criteriaList = GetPlaceBetAndSettleCriterias(request);
+
+			//TODO only insert bettrans_bet
 			var spResults = await InsertTransactionsAsync(criteriaList);
-			var failedSp = spResults.Find(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode));
-			if (failedSp != default)
+			var failedSp = spResults.FirstOrDefault(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode));
+
+			if (failedSp is not null)
 			{
-				await RefundAsync(request, cancellationToken);
-				return GenerateFailResponse(failedSp.StatusCode, failedSp.ErrMsg);
+				if (adjustAmount > 0)
+				{
+					await RefundAsync(request, cancellationToken);
+				}
 			}
 
-			var settleRes = await SettleAsync(request, cancellationToken);
+			//TODO add balance
+			if (adjustAmount > 0)
+			{
+				balanceResponse = await cashServiceClient.GameProviderAddBalanceAsync(
+				playerCode,
+				adjustAmount,
+				new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, ActionConstants.PlaceBetAndSettlePlaceBet),
+				string.Empty,
+				cancellationToken);
+
+				if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
+				{
+					return GenerateFailResponse(balanceResponse.ErrorCode, balanceResponse.ErrorMessage);
+				}
+			}
+
+			if (adjustAmount == 0)
+			{
+				balanceResponse = await cashServiceClient.GameProviderGetBalanceAsync(playerCode, cancellationToken).ConfigureAwait(false);
+			}
+
+			var balance = balanceResponse?.Balance ?? 0;
+
 			var res = new PlaceBetAndSettleResult();
-			if (settleRes == null || ErrorMapper.IsSuccess(settleRes?.ErrorCode))
-			{
-				var dataSets = spResults.Select((spResult, index) =>
-								new PlaceBetAndSettleResultDataSet { RefNo = spResult.RefNo.ToString(), TicketNo = request.Payload.BetDataSet[index].TicketNo })
-								.ToArray();
-				res.Payload = new PlaceBetAndSettlePayload(request.Payload.OperatorCustId, settleRes?.Balance ?? deductBalanceRes.Balance, dataSets);
-			}
-			else
-			{
-				res.ErrorCode = ErrorMapper.GetErrorCode(settleRes?.ErrorCode);
-			}
+
+			//TODO reject all or accept partial?!?
+			//First, reject all or accept all
+
+			var dataSets = spResults.Select((spResult, index) =>
+							new PlaceBetAndSettleResultDataSet { RefNo = spResult.RefNo.ToString(), TicketNo = request.Payload.BetDataSet[index].TicketNo })
+							.ToArray();
+			res.Payload = new PlaceBetAndSettlePayload(request.Payload.OperatorCustId, balance, dataSets);
+
+			//TODO insert rounds...
 			await PublishBetMessage(criteriaList, spResults, cancellationToken);
+
 			return res;
 		}
 		catch (Exception ex)
 		{
-			sentryClient.CaptureException(ex);
+			_ = sentryClient.CaptureException(ex);
 			return new PlaceBetAndSettleResult { ErrorCode = ErrorMapper.UnspecifiedError };
 		}
 	}
@@ -84,26 +133,9 @@ public class PlaceBetAndSettleHandler(
 			criteria.GameType = request.Payload.GameType;
 			criteria.IpAddress = request.Payload.IpAddress;
 			criteria.GameProviderCode = request.Payload.GameProviderCode;
+
 			return criteria;
 		});
-	}
-
-	private async ValueTask<BalanceResponse> DeductBalanceAsync(PlaceBetAndSettleRequest request, CancellationToken cancellationToken)
-	{
-		var betAmount = request.Payload.BetDataSet.Sum(bet => bet.ActualStake);
-		var refId = string.Join('@', request.Payload.BetDataSet.Select(bet => bet.TicketNo));
-		return await cashServiceClient.GameProviderDeductBalanceAsync(
-			request.Payload.OperatorCustId.ToPlayerCode(),
-			betAmount,
-			new Tgs.CashService.ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, ActionConstants.PlaceBetAndSettlePlaceBet),
-			string.Empty,
-			cancellationToken);
-	}
-
-	private async ValueTask<BalanceResponse?> SettleAsync(PlaceBetAndSettleRequest request, CancellationToken cancellationToken)
-	{
-		var amount = request.Payload.BetDataSet.Sum(bet => bet.Payout);
-		return amount > 0 ? await AddBalanceAsync(amount, ActionConstants.PlaceBetAndSettleSettle, request, cancellationToken) : null;
 	}
 
 	private async ValueTask RefundAsync(PlaceBetAndSettleRequest request, CancellationToken cancellationToken)
@@ -133,7 +165,7 @@ public class PlaceBetAndSettleHandler(
 
 	private PlaceBetAndSettleResult GenerateFailResponse(string errorCode, string errorMsg)
 	{
-		sentryClient.CaptureException(new Exception($"{errorCode} - {errorMsg}"));
+		_ = sentryClient.CaptureException(new Exception($"{errorCode} - {errorMsg}"));
 		return new PlaceBetAndSettleResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
 	}
 }
