@@ -29,13 +29,13 @@ public class BonusHandler(
 			var failedSp = spResults.Find(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode!));
 			if (failedSp != default)
 			{
-				return await GenerateResponseAsync(request, GenerateFailResponse(failedSp.StatusCode!), cancellationToken);
+				return await GenerateResponseAsync(request, GenerateFailResponse(failedSp.StatusCode!, failedSp.ErrMsg), cancellationToken);
 			}
 
 			var balanceResult = await AddBalanceAsync(request, gameProviderCode, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
-				return await GenerateResponseAsync(request, GenerateFailResponse(balanceResult.ErrorCode), cancellationToken);
+				return await GenerateResponseAsync(request, GenerateFailResponse(balanceResult.ErrorCode, balanceResult.ErrorMessage), cancellationToken);
 			}
 
 			var refNo = spResults.FirstOrDefault().RefNo;
@@ -49,10 +49,11 @@ public class BonusHandler(
 		}
 		catch (Exception ex)
 		{
-			Console.Write(ex.ToString());
+			SentrySdk.CaptureException(ex);
+
 			return new BonusResult
 			{
-				ErrorCode = 1,
+				ErrorCode = ErrorMapper.UnspecifiedError,
 			};
 		}
 	}
@@ -104,8 +105,9 @@ public class BonusHandler(
 		await messagePublisher.HandleBetAsync(HandleMessageMapper.Bonus(criteria, refNo.Value), cancellationToken);
 	}
 
-	private BonusResult GenerateFailResponse(string errorCode)
+	private BonusResult GenerateFailResponse(string errorCode, string errorMsg)
 	{
+		SentrySdk.CaptureMessage($"{errorCode} - {errorMsg}");
 		return new BonusResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
 	}
 

@@ -29,13 +29,13 @@ public class FreeSpinHandler(
 			var failedSp = spResults.Find(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode!));
 			if (failedSp != default)
 			{
-				return await GenerateResponseAsync(request, GenerateFailResponse(failedSp.StatusCode!), cancellationToken);
+				return await GenerateResponseAsync(request, GenerateFailResponse(failedSp.StatusCode!, failedSp.ErrMsg), cancellationToken);
 			}
 
 			var balanceResult = await AddBalanceAsync(request, gameProviderCode, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
-				return await GenerateResponseAsync(request, GenerateFailResponse(balanceResult.ErrorCode), cancellationToken);
+				return await GenerateResponseAsync(request, GenerateFailResponse(balanceResult.ErrorCode, balanceResult.ErrorMessage), cancellationToken);
 			}
 
 			var betDataSet = spResults.Select((spResult, index) =>
@@ -106,8 +106,9 @@ public class FreeSpinHandler(
 		}
 	}
 
-	private FreeSpinResult GenerateFailResponse(string errorCode)
+	private FreeSpinResult GenerateFailResponse(string errorCode, string errorMsg)
 	{
+		SentrySdk.CaptureMessage($"{errorCode} - {errorMsg}");
 		return new FreeSpinResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
 	}
 

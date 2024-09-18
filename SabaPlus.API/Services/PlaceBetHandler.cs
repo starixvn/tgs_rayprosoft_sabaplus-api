@@ -30,7 +30,7 @@ public class PlaceBetGetHandler(
 			var balanceResult = await DeductBalanceAsync(request, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
-				return await GenerateResponseAsync(request, GenerateFailResponse(balanceResult.ErrorCode), cancellationToken);
+				return await GenerateResponseAsync(request, GenerateFailResponse(balanceResult.ErrorCode, balanceResult.ErrorMessage), cancellationToken);
 			}
 
 			var criteriaList = GetPlaceBetCriterias(request);
@@ -39,7 +39,7 @@ public class PlaceBetGetHandler(
 			if (failedSp != default)
 			{
 				await RefundBalanceAsync(request, cancellationToken);
-				return await GenerateResponseAsync(request, GenerateFailResponse(failedSp.StatusCode!), cancellationToken);
+				return await GenerateResponseAsync(request, GenerateFailResponse(failedSp.StatusCode!, failedSp.ErrMsg), cancellationToken);
 			}
 
 			var betDataSet = spResults.Select((spResult, index) =>
@@ -120,8 +120,9 @@ public class PlaceBetGetHandler(
 		}
 	}
 
-	private PlaceBetResult GenerateFailResponse(string errorCode)
+	private PlaceBetResult GenerateFailResponse(string errorCode, string errorMsg)
 	{
+		SentrySdk.CaptureMessage($"{errorCode} - {errorMsg}");
 		return new PlaceBetResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
 	}
 

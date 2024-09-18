@@ -30,13 +30,13 @@ public class EndGameHandler(
 
 			if (failedSp != default)
 			{
-				return await GenerateResponseAsync(request, GenerateFailResponse(failedSp.StatusCode!), cancellationToken);
+				return await GenerateResponseAsync(request, GenerateFailResponse(failedSp.StatusCode!, failedSp.ErrMsg), cancellationToken);
 			}
 
 			var balanceResult = await AddBalanceAsync(request, gameProviderCode, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
-				return await GenerateResponseAsync(request, GenerateFailResponse(balanceResult.ErrorCode), cancellationToken);
+				return await GenerateResponseAsync(request, GenerateFailResponse(balanceResult.ErrorCode, balanceResult.ErrorMessage), cancellationToken);
 			}
 
 			var res = new EndGameResult
@@ -102,8 +102,9 @@ public class EndGameHandler(
 		}
 	}
 
-	private EndGameResult GenerateFailResponse(string errorCode)
+	private EndGameResult GenerateFailResponse(string errorCode, string errorMsg)
 	{
+		SentrySdk.CaptureMessage($"{errorCode} - {errorMsg}");
 		return new EndGameResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
 	}
 

@@ -26,7 +26,7 @@ public class PlaceBetAndSettleHandler(
 			var deductBalanceRes = await DeductBalanceAsync(request, cancellationToken).ConfigureAwait(false);
 			if (!ErrorMapper.IsSuccess(deductBalanceRes.ErrorCode))
 			{
-				return await GenerateResponseAsync(request, GenerateFailResponse(deductBalanceRes.ErrorCode), cancellationToken);
+				return await GenerateResponseAsync(request, GenerateFailResponse(deductBalanceRes.ErrorCode, deductBalanceRes.ErrorMessage), cancellationToken);
 			}
 
 			var criteriaList = GetPlaceBetAndSettleCriterias(request);
@@ -35,7 +35,7 @@ public class PlaceBetAndSettleHandler(
 			if (failedSp != default)
 			{
 				await RefundAsync(request, cancellationToken);
-				return await GenerateResponseAsync(request, GenerateFailResponse(failedSp.StatusCode), cancellationToken);
+				return await GenerateResponseAsync(request, GenerateFailResponse(failedSp.StatusCode, failedSp.ErrMsg), cancellationToken);
 			}
 
 			var settleRes = await SettleAsync(request, cancellationToken);
@@ -131,8 +131,9 @@ public class PlaceBetAndSettleHandler(
 		}
 	}
 
-	private PlaceBetAndSettleResult GenerateFailResponse(string errorCode)
+	private PlaceBetAndSettleResult GenerateFailResponse(string errorCode, string errorMsg)
 	{
+		SentrySdk.CaptureMessage($"{errorCode} - {errorMsg}");
 		return new PlaceBetAndSettleResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
 	}
 
