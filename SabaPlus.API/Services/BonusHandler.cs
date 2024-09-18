@@ -15,7 +15,8 @@ public class BonusHandler(
 	ISabaPlusApiMessagePublishHandler messagePublisher,
 	ICashServiceClient cashClient,
 	IGameProviderRepository gameProviderRepository,
-	IMapper mapper
+	IMapper mapper,
+	ISentryClient sentryClient
 	) : IRequestHandler<BonusRequest, BonusResult>
 {
 	public async Task<BonusResult> Handle(BonusRequest request, CancellationToken cancellationToken = default)
@@ -29,13 +30,13 @@ public class BonusHandler(
 			var failedSp = spResults.Find(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode!));
 			if (failedSp != default)
 			{
-				return await GenerateResponseAsync(request, GenerateFailResponse(failedSp.StatusCode!, failedSp.ErrMsg), cancellationToken);
+				return GenerateFailResponse(failedSp.StatusCode!, failedSp.ErrMsg);
 			}
 
 			var balanceResult = await AddBalanceAsync(request, gameProviderCode, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
-				return await GenerateResponseAsync(request, GenerateFailResponse(balanceResult.ErrorCode, balanceResult.ErrorMessage), cancellationToken);
+				return GenerateFailResponse(balanceResult.ErrorCode, balanceResult.ErrorMessage);
 			}
 
 			var refNo = spResults.FirstOrDefault().RefNo;
@@ -45,15 +46,15 @@ public class BonusHandler(
 			};
 
 			await PublishBetMessageAsync(criteriaList.FirstOrDefault(), refNo.Value, cancellationToken);
-			return await GenerateResponseAsync(request, res, cancellationToken);
+			return res;
 		}
 		catch (Exception ex)
 		{
-			SentrySdk.CaptureException(ex);
+			sentryClient.CaptureException(ex);
 
 			return new BonusResult
 			{
-				ErrorCode = ErrorMapper.UnspecifiedError,
+				ErrorCode = ErrorMapper.UnspecifiedError
 			};
 		}
 	}
@@ -79,7 +80,6 @@ public class BonusHandler(
 			criteria.OperatorCustId = request.Payload.OperatorCustId;
 			criteria.GameType = request.Payload.GameType;
 			criteria.GameProviderCode = gameProviderCode;
-			//criteria.GameId = request.Payload.S1GameId;
 			return criteria;
 		});
 	}
@@ -107,20 +107,7 @@ public class BonusHandler(
 
 	private BonusResult GenerateFailResponse(string errorCode, string errorMsg)
 	{
-		SentrySdk.CaptureMessage($"{errorCode} - {errorMsg}");
+		sentryClient.CaptureException(new Exception($"{errorCode} - {errorMsg}"));
 		return new BonusResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
-	}
-
-	private async ValueTask<BonusResult> GenerateResponseAsync(BonusRequest request, BonusResult result, CancellationToken cancellationToken)
-	{
-		var apiLogMessage = new ApiLogMessage()
-		{
-			Action = ActionConstants.Bonus,
-			Request = request,
-			Response = result
-		};
-		await messagePublisher.LogApi(apiLogMessage, cancellationToken);
-
-		return result;
 	}
 }

@@ -9,10 +9,7 @@ public class BonusCriteria
 	public string? TicketNo { get; set; }
 	public string? Action => ActionConstants.FreeSpin;
 	public string? GameProviderCode { get; set; }
-
-	//public string? GameId { get; set; }
 	public string? GameType { get; set; }
-
 	public string? GameRoundId { get; set; }
 	public string? ExternalGameId { get; set; }
 	public DateTime TransDate { get; set; }

@@ -1,15 +1,13 @@
 ﻿using MediatR;
-using SabaPlus.API.Messages;
 using SabaPlus.API.Models;
 using SabaPlus.API.Models.Balance;
-using SabaPlus.Common;
 using Tgs.CashService.Client;
 
 namespace SabaPlus.API.Services;
 
 public class GetBalanceHandler(
-	ISabaPlusApiMessagePublishHandler messagePublisher,
-	ICashServiceClient cashClient
+	ICashServiceClient cashClient,
+	ISentryClient sentryClient
 	) : IRequestHandler<GetBalanceRequest, GetBalanceResult>
 {
 	public async Task<GetBalanceResult> Handle(GetBalanceRequest query, CancellationToken cancellationToken = default)
@@ -26,18 +24,12 @@ public class GetBalanceHandler(
 			{
 				res.ErrorCode = ErrorMapper.GetErrorCode(balanceResult.ErrorCode);
 			}
-			await messagePublisher.LogApi(new ApiLogMessage()
-			{
-				Action = nameof(GetBalanceRequest),
-				Request = query,
-				Response = res
-			}, cancellationToken);
 
 			return res;
 		}
 		catch (Exception ex)
 		{
-			SentrySdk.CaptureException(ex);
+			sentryClient.CaptureException(ex);
 			return new GetBalanceResult { ErrorCode = ErrorMapper.UnspecifiedError };
 		}
 	}

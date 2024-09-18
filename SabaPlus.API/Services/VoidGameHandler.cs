@@ -21,12 +21,12 @@ public class VoidGameHandler(ISabaPlusApiMessagePublishHandler messagePublisher)
 				}
 			};
 
-			await messagePublisher.LogApi(new ApiLogMessage()
-			{
-				Action = "Void Game",
-				Request = query,
-				Response = res
-			}, cancellationToken);
+			//await messagePublisher.LogApi(new ApiLogMessage()
+			//{
+			//	Action = "Void Game",
+			//	Request = query,
+			//	Response = res
+			//}, cancellationToken);
 
 			return res;
 		}

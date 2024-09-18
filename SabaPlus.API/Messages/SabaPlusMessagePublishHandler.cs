@@ -5,7 +5,7 @@ using Valhalla.MessageQueue;
 
 namespace SabaPlus.API.Messages;
 
-public class SabaPlusMessagePublishHandler(IMessageSender messageSender) : ISabaPlusApiMessagePublishHandler
+public class SabaPlusMessagePublishHandler(IMessageSender messageSender, IConfiguration configuration) : ISabaPlusApiMessagePublishHandler
 {
 	public async ValueTask LogApi(ApiLogMessage mesage, CancellationToken cancellationToken = default)
 	{
@@ -14,6 +14,7 @@ public class SabaPlusMessagePublishHandler(IMessageSender messageSender) : ISaba
 
 	public async Task HandleBetAsync(HandleBetMessage mesage, CancellationToken cancellationToken = default)
 	{
-		await messageSender.PublishAsync(subject: Constants.HandleBetPublish, data: JsonSerializer.Serialize(mesage), cancellationToken);
+		var env = configuration.GetValue<string>("env");
+		await messageSender.PublishAsync(subject: $"{Constants.HandleBetPublish}.{env}", data: JsonSerializer.Serialize(mesage), cancellationToken);
 	}
 }

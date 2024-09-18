@@ -16,7 +16,8 @@ public class PlaceBetGetHandler(
 	ISabaPlusApiMessagePublishHandler messagePublisher,
 	IGameProviderRepository gameProviderRepository,
 	ICashServiceClient cashClient,
-	IMapper mapper
+	IMapper mapper,
+	ISentryClient sentryClient
 	) : IRequestHandler<PlaceBetRequest, PlaceBetResult>
 {
 	public async Task<PlaceBetResult> Handle(PlaceBetRequest request, CancellationToken cancellationToken = default)
@@ -30,7 +31,7 @@ public class PlaceBetGetHandler(
 			var balanceResult = await DeductBalanceAsync(request, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
-				return await GenerateResponseAsync(request, GenerateFailResponse(balanceResult.ErrorCode, balanceResult.ErrorMessage), cancellationToken);
+				return GenerateFailResponse(balanceResult.ErrorCode, balanceResult.ErrorMessage);
 			}
 
 			var criteriaList = GetPlaceBetCriterias(request);
@@ -39,7 +40,7 @@ public class PlaceBetGetHandler(
 			if (failedSp != default)
 			{
 				await RefundBalanceAsync(request, cancellationToken);
-				return await GenerateResponseAsync(request, GenerateFailResponse(failedSp.StatusCode!, failedSp.ErrMsg), cancellationToken);
+				return GenerateFailResponse(failedSp.StatusCode!, failedSp.ErrMsg);
 			}
 
 			var betDataSet = spResults.Select((spResult, index) =>
@@ -50,12 +51,12 @@ public class PlaceBetGetHandler(
 			};
 
 			await PublishBetAsync(criteriaList, spResults, cancellationToken);
-			return await GenerateResponseAsync(request, res, cancellationToken);
+			return res;
 		}
 		catch (Exception ex)
 		{
-			SentrySdk.CaptureException(ex);
-			return await GenerateResponseAsync(request, new PlaceBetResult { ErrorCode = ErrorMapper.UnspecifiedError }, cancellationToken);
+			sentryClient.CaptureException(ex);
+			return new PlaceBetResult { ErrorCode = ErrorMapper.UnspecifiedError };
 		}
 	}
 
@@ -107,7 +108,6 @@ public class PlaceBetGetHandler(
 			criteria.GameType = request.Payload.GameType;
 			criteria.IpAddress = request.Payload.IpAddress;
 			criteria.GameProviderCode = request.Payload.GameProviderCode;
-			//criteria.GameId = request.Payload.S1GameId;
 			return criteria;
 		});
 	}
@@ -122,20 +122,7 @@ public class PlaceBetGetHandler(
 
 	private PlaceBetResult GenerateFailResponse(string errorCode, string errorMsg)
 	{
-		SentrySdk.CaptureMessage($"{errorCode} - {errorMsg}");
+		sentryClient.CaptureException(new Exception($"{errorCode} - {errorMsg}"));
 		return new PlaceBetResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
-	}
-
-	private async ValueTask<PlaceBetResult> GenerateResponseAsync(PlaceBetRequest request, PlaceBetResult result, CancellationToken cancellationToken)
-	{
-		var apiLogMessage = new ApiLogMessage()
-		{
-			Action = ActionConstants.PlaceBet,
-			Request = request,
-			Response = result
-		};
-		await messagePublisher.LogApi(apiLogMessage, cancellationToken);
-
-		return result;
 	}
 }

@@ -1,17 +1,15 @@
 ﻿using MediatR;
-using SabaPlus.API.Messages;
 using SabaPlus.API.Models;
 using SabaPlus.API.Models.PlayerInfo;
-using SabaPlus.Common;
 using SabaPlus.Core;
 using Tgs.CashService.Client;
 
 namespace SabaPlus.API.Services;
 
 public class GetPlayerInfoHandler(
-	ISabaPlusApiMessagePublishHandler messagePublisher,
 	IPlayerRepository playerRepository,
-	ICashServiceClient cashClient
+	ICashServiceClient cashClient,
+	ISentryClient sentryClient
 	) : IRequestHandler<GetPlayerInfoRequest, GetPlayerInfoResult>
 {
 	public async Task<GetPlayerInfoResult> Handle(GetPlayerInfoRequest query, CancellationToken cancellationToken = default)
@@ -45,19 +43,11 @@ public class GetPlayerInfoHandler(
 					//BetGroup = "BetGroup"
 				};
 			}
-
-			await messagePublisher.LogApi(new ApiLogMessage()
-			{
-				Action = "GetPlayerInfo",
-				Request = query,
-				Response = res
-			}, cancellationToken);
-
 			return res;
 		}
 		catch (Exception ex)
 		{
-			SentrySdk.CaptureException(ex);
+			sentryClient.CaptureException(ex);
 			return new GetPlayerInfoResult { ErrorCode = ErrorMapper.UnspecifiedError };
 		}
 	}

@@ -15,7 +15,8 @@ public class EndGameHandler(
 	ISabaPlusApiMessagePublishHandler messagePublisher,
 	ICashServiceClient cashClient,
 	IGameProviderRepository gameProviderRepository,
-	IMapper mapper
+	IMapper mapper,
+	ISentryClient sentryClient
 	) : IRequestHandler<EndGameRequest, EndGameResult>
 {
 	public async Task<EndGameResult> Handle(EndGameRequest request, CancellationToken cancellationToken = default)
@@ -30,13 +31,13 @@ public class EndGameHandler(
 
 			if (failedSp != default)
 			{
-				return await GenerateResponseAsync(request, GenerateFailResponse(failedSp.StatusCode!, failedSp.ErrMsg), cancellationToken);
+				return GenerateFailResponse(failedSp.StatusCode!, failedSp.ErrMsg);
 			}
 
 			var balanceResult = await AddBalanceAsync(request, gameProviderCode, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
-				return await GenerateResponseAsync(request, GenerateFailResponse(balanceResult.ErrorCode, balanceResult.ErrorMessage), cancellationToken);
+				return GenerateFailResponse(balanceResult.ErrorCode, balanceResult.ErrorCode);
 			}
 
 			var res = new EndGameResult
@@ -44,12 +45,12 @@ public class EndGameHandler(
 				Payload = new EndGameResponsePayload(request.Payload.OperatorCustId, balanceResult.Balance)
 			};
 			await PublishMessageAsync(criteriaList, cancellationToken);
-			return await GenerateResponseAsync(request, res, cancellationToken);
+			return res;
 		}
 		catch (Exception ex)
 		{
-			SentrySdk.CaptureException(ex);
-			return await GenerateResponseAsync(request, new EndGameResult { ErrorCode = ErrorMapper.UnspecifiedError }, cancellationToken);
+			sentryClient.CaptureException(ex);
+			return new EndGameResult { ErrorCode = ErrorMapper.UnspecifiedError };
 		}
 	}
 
@@ -104,20 +105,7 @@ public class EndGameHandler(
 
 	private EndGameResult GenerateFailResponse(string errorCode, string errorMsg)
 	{
-		SentrySdk.CaptureMessage($"{errorCode} - {errorMsg}");
+		sentryClient.CaptureException(new Exception($"{errorCode} - {errorMsg}"));
 		return new EndGameResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
-	}
-
-	private async ValueTask<EndGameResult> GenerateResponseAsync(EndGameRequest request, EndGameResult result, CancellationToken cancellationToken)
-	{
-		var apiLogMessage = new ApiLogMessage()
-		{
-			Action = ActionConstants.EndGame,
-			Request = request,
-			Response = result
-		};
-		await messagePublisher.LogApi(apiLogMessage, cancellationToken);
-
-		return result;
 	}
 }

@@ -15,7 +15,8 @@ public class FreeSpinHandler(
 	ISabaPlusApiMessagePublishHandler messagePublisher,
 	ICashServiceClient cashClient,
 	IGameProviderRepository gameProviderRepository,
-	IMapper mapper
+	IMapper mapper,
+	ISentryClient sentryClient
 	) : IRequestHandler<FreeSpinRequest, FreeSpinResult>
 {
 	public async Task<FreeSpinResult> Handle(FreeSpinRequest request, CancellationToken cancellationToken = default)
@@ -29,13 +30,13 @@ public class FreeSpinHandler(
 			var failedSp = spResults.Find(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode!));
 			if (failedSp != default)
 			{
-				return await GenerateResponseAsync(request, GenerateFailResponse(failedSp.StatusCode!, failedSp.ErrMsg), cancellationToken);
+				return GenerateFailResponse(failedSp.StatusCode!, failedSp.ErrMsg);
 			}
 
 			var balanceResult = await AddBalanceAsync(request, gameProviderCode, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
-				return await GenerateResponseAsync(request, GenerateFailResponse(balanceResult.ErrorCode, balanceResult.ErrorMessage), cancellationToken);
+				return GenerateFailResponse(balanceResult.ErrorCode, balanceResult.ErrorMessage);
 			}
 
 			var betDataSet = spResults.Select((spResult, index) =>
@@ -46,12 +47,12 @@ public class FreeSpinHandler(
 			};
 
 			await PublishBetMessageAsync(criteriaList, spResults, cancellationToken);
-			return await GenerateResponseAsync(request, res, cancellationToken);
+			return res;
 		}
 		catch (Exception ex)
 		{
-			SentrySdk.CaptureException(ex);
-			return await GenerateResponseAsync(request, new FreeSpinResult { ErrorCode = ErrorMapper.UnspecifiedError }, cancellationToken);
+			sentryClient.CaptureException(ex);
+			return new FreeSpinResult { ErrorCode = ErrorMapper.UnspecifiedError };
 		}
 	}
 
@@ -77,7 +78,6 @@ public class FreeSpinHandler(
 			criteria.GameType = request.Payload.GameType;
 			criteria.IpAddress = request.Payload.IpAddress;
 			criteria.GameProviderCode = gameProviderCode;
-			//criteria.GameId = request.Payload.S1GameId;
 			return criteria;
 		});
 	}
@@ -108,20 +108,7 @@ public class FreeSpinHandler(
 
 	private FreeSpinResult GenerateFailResponse(string errorCode, string errorMsg)
 	{
-		SentrySdk.CaptureMessage($"{errorCode} - {errorMsg}");
+		sentryClient.CaptureException(new Exception($"{errorCode} - {errorMsg}"));
 		return new FreeSpinResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
-	}
-
-	private async ValueTask<FreeSpinResult> GenerateResponseAsync(FreeSpinRequest request, FreeSpinResult result, CancellationToken cancellationToken)
-	{
-		var apiLogMessage = new ApiLogMessage()
-		{
-			Action = ActionConstants.FreeSpin,
-			Request = request,
-			Response = result
-		};
-		await messagePublisher.LogApi(apiLogMessage, cancellationToken);
-
-		return result;
 	}
 }

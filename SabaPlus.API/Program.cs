@@ -1,3 +1,4 @@
+using MediatR;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using NATS.Client.Core;
@@ -7,13 +8,13 @@ using OpenTelemetry.Trace;
 using SabaPlus.API;
 using SabaPlus.API.Messages;
 using SabaPlus.API.Middlewares;
+using SabaPlus.API.Services;
 using SabaPlus.Core.DependencyInjection;
 using SabaPlus.Core.Models;
 using Tgs.GameRecord.Saba.Common;
 using Tgs.MessageQueue.Nats.Serializers;
 
 var builder = WebApplication.CreateBuilder(args);
-
 // Add services to the container.
 builder.Services
 	.AddOptions<MongoDBOptions>()
@@ -33,6 +34,7 @@ builder.Services
 	})
 	.AddMemoryCache();
 
+var env = builder.Configuration.GetValue<string>("env");
 builder.Services
 	.AddKeyedSingleton("Nats", (sp, _) => new NatsConnection(NatsOpts.Default with
 	{
@@ -45,7 +47,7 @@ builder.Services
 	.AddNatsMessageQueue(config => config.ConfigureResolveConnection(sp => sp.GetRequiredKeyedService<NatsConnection>("Nats")))
 	.ClearAllExchanges()
 	.AddInProcessGlobPatternExchange(Constants.InprocessGlobExchange)
-	.AddNatsGlobPatternExchange(Constants.HandleBetPublish);
+	.AddNatsGlobPatternExchange($"{Constants.HandleBetPublish}.{env}");
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -94,7 +96,9 @@ builder.Services
 	.AddServiceUtiltiyInterceptors();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(Program).Assembly));
+builder.Services
+	.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(Program).Assembly))
+	.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 builder.Services.Configure<KestrelServerOptions>(options =>
 {
 	options.AllowSynchronousIO = true;
