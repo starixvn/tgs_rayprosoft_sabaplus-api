@@ -116,7 +116,7 @@ public class PlaceBetAndSettleHandler(
 	}
 
 	private static bool IsAddBalance(decimal adjustAmount, bool failedSp)
-		=> failedSp && adjustAmount > 0 || adjustAmount < 0;
+		=> failedSp && adjustAmount < 0 || adjustAmount > 0;
 
 	private PlaceBetAndSettleCriteria ConvertToCriteria(
 		string TimeStamp,
