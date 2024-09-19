@@ -33,7 +33,9 @@ public class PlaceBetAndSettleHandler(
 
 			if (bets?.Length == 0)
 			{
-				return new PlaceBetAndSettleResult { ErrorCode = ErrorMapper.ParameterIncorrect };
+				return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(
+					ErrorMapper.ParameterIncorrect.ToString(),
+					ErrorMapper.GetErrorMessage(ErrorMapper.ParameterIncorrect));
 			}
 
 			//TODO process on one bet
@@ -50,7 +52,7 @@ public class PlaceBetAndSettleHandler(
 			{
 				balanceResponse = await cashServiceClient.GameProviderDeductBalanceAsync(
 				playerCode,
-				adjustAmount,
+				Math.Abs(adjustAmount),
 				new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, ActionConstants.PlaceBetAndSettlePlaceBet),
 				string.Empty,
 				cancellationToken);
@@ -94,7 +96,7 @@ public class PlaceBetAndSettleHandler(
 
 			if (isFailedSp)
 			{
-				return GenerateFailResponse(spResult.StatusCode, spResult.ErrMsg);
+				return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(spResult.StatusCode, spResult.ErrMsg);
 			}
 			var refNo = spResult.RefNo.ToString();
 			var dataSets = new PlaceBetAndSettleResultDataSet { RefNo = refNo, TicketNo = bet.TicketNo };
