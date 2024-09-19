@@ -3,6 +3,7 @@ using MediatR;
 using SabaPlus.API.Messages;
 using SabaPlus.API.Models;
 using SabaPlus.API.Models.FreeSpin;
+using SabaPlus.API.Services.Shared;
 using SabaPlus.Common;
 using SabaPlus.Core;
 using SabaPlus.Repositories.Helpers;
@@ -30,13 +31,13 @@ public class FreeSpinHandler(
 			var failedSp = spResults.Find(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode!));
 			if (failedSp != default)
 			{
-				return GenerateFailResponse(failedSp.StatusCode!, failedSp.ErrMsg);
+				return ResultHelper.GenerateFailedResult<FreeSpinResult, FreeSpinPayload>(failedSp.StatusCode!, failedSp.ErrMsg);
 			}
 
 			var balanceResult = await AddBalanceAsync(request, gameProviderCode, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
-				return GenerateFailResponse(balanceResult.ErrorCode, balanceResult.ErrorMessage);
+				return ResultHelper.GenerateFailedResult<FreeSpinResult, FreeSpinPayload>(balanceResult.ErrorCode, balanceResult.ErrorMessage);
 			}
 
 			var betDataSet = spResults.Select((spResult, index) =>
@@ -104,11 +105,5 @@ public class FreeSpinHandler(
 		{
 			await messagePublisher.HandleBetAsync(HandleMessageMapper.FreeSpin(item.criteria, spResults[item.i].RefNo!.Value), cancellationToken);
 		}
-	}
-
-	private FreeSpinResult GenerateFailResponse(string errorCode, string errorMsg)
-	{
-		sentryClient.CaptureException(new Exception($"{errorCode} - {errorMsg}"));
-		return new FreeSpinResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
 	}
 }

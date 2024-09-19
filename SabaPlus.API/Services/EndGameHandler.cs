@@ -3,6 +3,7 @@ using MediatR;
 using SabaPlus.API.Messages;
 using SabaPlus.API.Models;
 using SabaPlus.API.Models.EndGame;
+using SabaPlus.API.Services.Shared;
 using SabaPlus.Common;
 using SabaPlus.Core;
 using SabaPlus.Repositories.Helpers;
@@ -31,13 +32,13 @@ public class EndGameHandler(
 
 			if (failedSp != default)
 			{
-				return GenerateFailResponse(failedSp.StatusCode!, failedSp.ErrMsg);
+				return ResultHelper.GenerateFailedResult<EndGameResult, EndGameResponsePayload>(failedSp.StatusCode, failedSp.ErrMsg);
 			}
 
 			var balanceResult = await AddBalanceAsync(request, gameProviderCode, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
-				return GenerateFailResponse(balanceResult.ErrorCode, balanceResult.ErrorCode);
+				return ResultHelper.GenerateFailedResult<EndGameResult, EndGameResponsePayload>(balanceResult.ErrorCode, balanceResult.ErrorCode);
 			}
 
 			var res = new EndGameResult
@@ -101,11 +102,5 @@ public class EndGameHandler(
 		{
 			await messagePublisher.HandleBetAsync(HandleMessageMapper.EndGame(criteria), cancellationToken);
 		}
-	}
-
-	private EndGameResult GenerateFailResponse(string errorCode, string errorMsg)
-	{
-		sentryClient.CaptureException(new Exception($"{errorCode} - {errorMsg}"));
-		return new EndGameResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
 	}
 }

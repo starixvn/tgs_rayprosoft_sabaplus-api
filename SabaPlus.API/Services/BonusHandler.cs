@@ -3,6 +3,7 @@ using MediatR;
 using SabaPlus.API.Messages;
 using SabaPlus.API.Models;
 using SabaPlus.API.Models.Bonus;
+using SabaPlus.API.Services.Shared;
 using SabaPlus.Common;
 using SabaPlus.Core;
 using SabaPlus.Repositories.Helpers;
@@ -30,13 +31,13 @@ public class BonusHandler(
 			var failedSp = spResults.Find(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode!));
 			if (failedSp != default)
 			{
-				return GenerateFailResponse(failedSp.StatusCode!, failedSp.ErrMsg);
+				return ResultHelper.GenerateFailedResult<BonusResult, BonusPayload>(failedSp.StatusCode!, failedSp.ErrMsg);
 			}
 
 			var balanceResult = await AddBalanceAsync(request, gameProviderCode, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
-				return GenerateFailResponse(balanceResult.ErrorCode, balanceResult.ErrorMessage);
+				return ResultHelper.GenerateFailedResult<BonusResult, BonusPayload>(balanceResult.ErrorCode, balanceResult.ErrorMessage);
 			}
 
 			var refNo = spResults.FirstOrDefault().RefNo;
@@ -103,11 +104,5 @@ public class BonusHandler(
 	private async ValueTask PublishBetMessageAsync(BonusCriteria criteria, long? refNo, CancellationToken cancellationToken)
 	{
 		await messagePublisher.HandleBetAsync(HandleMessageMapper.Bonus(criteria, refNo.Value), cancellationToken);
-	}
-
-	private BonusResult GenerateFailResponse(string errorCode, string errorMsg)
-	{
-		sentryClient.CaptureException(new Exception($"{errorCode} - {errorMsg}"));
-		return new BonusResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
 	}
 }

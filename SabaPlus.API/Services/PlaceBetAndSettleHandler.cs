@@ -3,6 +3,7 @@ using MediatR;
 using SabaPlus.API.Messages;
 using SabaPlus.API.Models;
 using SabaPlus.API.Models.PlaceBetAndSettle;
+using SabaPlus.API.Services.Shared;
 using SabaPlus.Common;
 using SabaPlus.Core;
 using SabaPlus.Repositories.Helpers;
@@ -48,7 +49,7 @@ public class PlaceBetAndSettleHandler(
 
 				if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
 				{
-					return GenerateFailResponse(balanceResponse.ErrorCode, balanceResponse.ErrorMessage);
+					return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(balanceResponse.ErrorCode, balanceResponse.ErrorMessage);
 				}
 			}
 
@@ -78,7 +79,7 @@ public class PlaceBetAndSettleHandler(
 
 				if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
 				{
-					return GenerateFailResponse(balanceResponse.ErrorCode, balanceResponse.ErrorMessage);
+					return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(balanceResponse.ErrorCode, balanceResponse.ErrorMessage);
 				}
 			}
 
@@ -161,11 +162,5 @@ public class PlaceBetAndSettleHandler(
 		{
 			await messagePublisher.HandleBetAsync(HandleMessageMapper.PlaceBetAndSettle(item.criteria, spResults[item.i].RefNo!.Value), cancellationToken);
 		}
-	}
-
-	private PlaceBetAndSettleResult GenerateFailResponse(string errorCode, string errorMsg)
-	{
-		_ = sentryClient.CaptureException(new Exception($"{errorCode} - {errorMsg}"));
-		return new PlaceBetAndSettleResult { ErrorCode = ErrorMapper.GetErrorCode(errorCode) };
 	}
 }
