@@ -2,6 +2,7 @@
 using Dapper;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using SabaPlus.Core;
 using SabaPlus.Core.Models;
@@ -14,11 +15,11 @@ internal class PlayerRepository : IPlayerRepository
 	private readonly IMemoryCache memoryCache;
 	private readonly CacheSettingsOptions cacheSettings;
 
-	public PlayerRepository(IConfiguration configuration, IMemoryCache memoryCache)
+	public PlayerRepository(IConfiguration configuration, IMemoryCache memoryCache, IOptions<CacheSettingsOptions> cacheSettings)
 	{
 		connectionString = configuration.GetConnectionString("Tgs")!;
 		this.memoryCache = memoryCache;
-		cacheSettings = new CacheSettingsOptions(60);
+		this.cacheSettings = cacheSettings.Value;
 	}
 
 	public async ValueTask<PlayerInfo?> GetPlayerInfoByPlayerCodeAsync(string playerCode, string gameProviderCode, CancellationToken cancellationToken = default)
