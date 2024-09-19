@@ -23,7 +23,7 @@ builder.Services
 	})
 	.AddMemoryCache();
 
-var env = builder.Configuration.GetValue<string>("env");
+var env = builder.Configuration.GetValue<string>("Env");
 builder.Services
 	.AddKeyedSingleton("Nats", (sp, _) => new NatsConnection(NatsOpts.Default with
 	{
