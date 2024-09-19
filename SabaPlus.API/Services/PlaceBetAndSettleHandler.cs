@@ -54,12 +54,11 @@ public class PlaceBetAndSettleHandler(
 				playerCode,
 				Math.Abs(adjustAmount),
 				new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, ActionConstants.PlaceBetAndSettlePlaceBet),
-				string.Empty,
-				cancellationToken);
+				cancellationToken: cancellationToken);
 
 				if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
 				{
-					return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(balanceResponse.ErrorCode, balanceResponse.ErrorMessage);
+					return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(balanceResponse.ErrorCode, "Cannot deduct amount");
 				}
 			}
 
@@ -70,6 +69,11 @@ public class PlaceBetAndSettleHandler(
 
 			var isFailedSp = !ErrorMapper.IsSuccess(spResult.StatusCode);
 
+			if (isFailedSp)
+			{
+				return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(spResult.StatusCode, spResult.ErrMsg);
+			}
+
 			if (IsAddBalance(adjustAmount, isFailedSp))
 			{
 				var action = isFailedSp ? ActionConstants.PlaceBetAndSettleFail : ActionConstants.PlaceBetAndSettlePlaceBet;
@@ -78,12 +82,11 @@ public class PlaceBetAndSettleHandler(
 				playerCode,
 				Math.Abs(adjustAmount),
 				new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, action),
-				string.Empty,
-				cancellationToken);
+				cancellationToken: cancellationToken);
 
 				if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
 				{
-					return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(balanceResponse.ErrorCode, balanceResponse.ErrorMessage);
+					return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(balanceResponse.ErrorCode, "Cannot add amount");
 				}
 			}
 
@@ -94,10 +97,6 @@ public class PlaceBetAndSettleHandler(
 
 			var balance = balanceResponse?.Balance ?? 0;
 
-			if (isFailedSp)
-			{
-				return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(spResult.StatusCode, spResult.ErrMsg);
-			}
 			var refNo = spResult.RefNo.ToString();
 			var dataSets = new PlaceBetAndSettleResultDataSet { RefNo = refNo, TicketNo = bet.TicketNo };
 			var res = new PlaceBetAndSettleResult
