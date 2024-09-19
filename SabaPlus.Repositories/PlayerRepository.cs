@@ -2,7 +2,6 @@
 using Dapper;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
-using MongoDB.Driver;
 using Npgsql;
 using SabaPlus.Core;
 using SabaPlus.Core.Models;

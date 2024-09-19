@@ -6,27 +6,16 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using SabaPlus.API;
-using SabaPlus.API.Messages;
-using SabaPlus.API.Middlewares;
 using SabaPlus.API.Services;
 using SabaPlus.Core.DependencyInjection;
-using SabaPlus.Core.Models;
 using Tgs.GameRecord.Saba.Common;
 using Tgs.MessageQueue.Nats.Serializers;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services
-	.AddOptions<MongoDBOptions>()
-	.Configure((MongoDBOptions options, IServiceProvider sp) =>
-	{
-		var configuration = sp.GetRequiredService<IConfiguration>();
-		options.ConnectionString = configuration.GetConnectionString("Mongo")!;
-	})
-	.Services
-	.AddSingleton<MongoDBConnectionManager>()
 	.AddSabaPlusApiCore()
-	.AddRepositories(mongoClientResolver: (sp) => sp.GetRequiredService<MongoDBConnectionManager>().MongoClient)
+	.AddRepositories()
 	.AddCashServiceClient((op, sp) =>
 	{
 		var config = sp.GetRequiredService<IConfiguration>();
@@ -42,11 +31,9 @@ builder.Services
 		SerializerRegistry = TgsNatsSerializerRegistration.Default
 	}))
 	.AddMessageQueue()
-	.AddInProcessMessageQueue(configuration =>
-		configuration.AddHandler<ApiLogsMessageHandler>($"{Constants.ApiLogsExchange}.{env}"))
 	.AddNatsMessageQueue(config => config.ConfigureResolveConnection(sp => sp.GetRequiredKeyedService<NatsConnection>("Nats")))
 	.ClearAllExchanges()
-	.AddInProcessGlobPatternExchange($"{Constants.ApiLogsExchange}.{env}")
+	.AddNatsGlobPatternExchange($"{Constants.ApiLogsPublish}.{env}")
 	.AddNatsGlobPatternExchange($"{Constants.HandleBetPublish}.{env}");
 
 builder.Services.AddControllers().AddJsonOptions(options =>

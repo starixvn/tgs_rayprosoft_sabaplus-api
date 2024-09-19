@@ -9,4 +9,6 @@ public record ApiLogMessage
 	public object Request { get; init; } = default!;
 
 	public object Response { get; init; } = default!;
+
+	public string GameProviderCode => "SABAPLUS";
 }

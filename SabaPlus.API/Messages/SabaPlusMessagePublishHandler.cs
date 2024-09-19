@@ -10,7 +10,7 @@ public class SabaPlusMessagePublishHandler(IMessageSender messageSender, IConfig
 	public async ValueTask LogApi(ApiLogMessage mesage, CancellationToken cancellationToken = default)
 	{
 		var env = configuration.GetValue<string>("env");
-		await messageSender.PublishAsync(subject: $"{Constants.ApiLogsExchange}.{env}", data: JsonSerializer.Serialize(mesage), cancellationToken);
+		await messageSender.PublishAsync(subject: $"{Constants.ApiLogsPublish}.{env}", data: JsonSerializer.Serialize(mesage), cancellationToken);
 	}
 
 	public async Task HandleBetAsync(HandleBetMessage mesage, CancellationToken cancellationToken = default)
