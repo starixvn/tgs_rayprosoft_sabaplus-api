@@ -43,10 +43,10 @@ builder.Services
 	}))
 	.AddMessageQueue()
 	.AddInProcessMessageQueue(configuration =>
-		configuration.AddHandler<ApiLogsMessageHandler>(Constants.ApiLogsExchange))
+		configuration.AddHandler<ApiLogsMessageHandler>($"{Constants.ApiLogsExchange}.{env}"))
 	.AddNatsMessageQueue(config => config.ConfigureResolveConnection(sp => sp.GetRequiredKeyedService<NatsConnection>("Nats")))
 	.ClearAllExchanges()
-	.AddInProcessGlobPatternExchange($"{Constants.InprocessGlobExchange}.{env}")
+	.AddInProcessGlobPatternExchange($"{Constants.ApiLogsExchange}.{env}")
 	.AddNatsGlobPatternExchange($"{Constants.HandleBetPublish}.{env}");
 
 builder.Services.AddControllers().AddJsonOptions(options =>

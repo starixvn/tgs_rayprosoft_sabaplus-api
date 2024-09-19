@@ -3,6 +3,5 @@
 public record Constants
 {
 	public const string ApiLogsExchange = "sabaplus.inprocess.api.logs";
-	public const string InprocessGlobExchange = "sabaplus.inprocess*";
 	public const string HandleBetPublish = "saba.single.wallet.api.handle.bet";
 }
