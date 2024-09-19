@@ -72,6 +72,8 @@ builder.Services
 		.AddSource("Tgs.*")
 		.AddSource("TGS.*")
 		.AddSource("Valhalla.*")
+		.AddSource("SabaPlus.*")
+		.AddSource("Npgsql")
 		.AddAspNetCoreInstrumentation(options => options.Filter =
 			httpContext => !httpContext.Request.Path.HasValue
 				|| !httpContext.Request.Path.StartsWithSegments("/swagger")
@@ -82,7 +84,9 @@ builder.Services
 				&& !excludeExtensions.Any(
 					ext => httpContext.Request.Path.Value.EndsWith($".{ext}")))
 		.AddHttpClientInstrumentation()
+		.SetSampler(new AlwaysOnSampler())
 		.AddEntityFrameworkCoreInstrumentation(options => options.SetDbStatementForText = true)
+		.AddProfileViewExporter()
 		.AddOtlpExporter(options => options.Endpoint = builder.Configuration.GetValue<Uri>("Otel:Collector") ?? new Uri("")))
 	.WithMetrics(meterBuiler => meterBuiler
 		.SetResourceBuilder(ResourceBuilder.CreateDefault()
