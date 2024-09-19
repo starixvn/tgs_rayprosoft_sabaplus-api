@@ -25,10 +25,6 @@ public class PlaceBetAndSettleHandler(
 	{
 		try
 		{
-			BalanceResponse? balanceResponse = null;
-			//TODO must calculate adjust amount, if > 0 then add, < 0 then deduct
-			var playerCode = request.Payload.OperatorCustId.ToPlayerCode();
-
 			var bets = request.Payload.BetDataSet;
 
 			if (bets?.Length == 0)
@@ -38,75 +34,9 @@ public class PlaceBetAndSettleHandler(
 					ErrorMapper.GetErrorMessage(ErrorMapper.ParameterIncorrect));
 			}
 
-			//TODO process on one bet
 			var bet = bets.First();
 
-			var betAmount = bet.ActualStake;
-			var payout = bet.Payout;
-			var adjustAmount = payout - betAmount;
-
-			var refId = bet.TicketNo;
-
-			//TODO deduct
-			if (adjustAmount < 0)
-			{
-				balanceResponse = await cashServiceClient.GameProviderDeductBalanceAsync(
-				playerCode,
-				Math.Abs(adjustAmount),
-				new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, ActionConstants.PlaceBetAndSettlePlaceBet),
-				cancellationToken: cancellationToken);
-
-				if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
-				{
-					return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(balanceResponse.ErrorCode, "Cannot deduct amount");
-				}
-			}
-
-			var criteria = ConvertToCriteria(request.TimeStamp, request.Seq, request.Payload, bet);
-			var spResult = await gameProviderRepository.CallStoredProcedureAsync<PlaceBetAndSettleCriteria, SPResult>(
-				criteria,
-				StoreProcedureMapper.InsertSignalSP);
-
-			var isFailedSp = !ErrorMapper.IsSuccess(spResult.StatusCode);
-
-			if (isFailedSp)
-			{
-				return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(spResult.StatusCode, spResult.ErrMsg);
-			}
-
-			if (IsAddBalance(adjustAmount, isFailedSp))
-			{
-				var action = isFailedSp ? ActionConstants.PlaceBetAndSettleFail : ActionConstants.PlaceBetAndSettlePlaceBet;
-
-				balanceResponse = await cashServiceClient.GameProviderAddBalanceAsync(
-				playerCode,
-				Math.Abs(adjustAmount),
-				new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, action),
-				cancellationToken: cancellationToken);
-
-				if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
-				{
-					return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(balanceResponse.ErrorCode, "Cannot add amount");
-				}
-			}
-
-			if (adjustAmount == 0)
-			{
-				balanceResponse = await cashServiceClient.GameProviderGetBalanceAsync(playerCode, cancellationToken).ConfigureAwait(false);
-			}
-
-			var balance = balanceResponse?.Balance ?? 0;
-
-			var refNo = spResult.RefNo.ToString();
-			var dataSets = new PlaceBetAndSettleResultDataSet { RefNo = refNo, TicketNo = bet.TicketNo };
-			var res = new PlaceBetAndSettleResult
-			{
-				Payload = new PlaceBetAndSettlePayload(request.Payload.OperatorCustId, balance, [dataSets])
-			};
-
-			await messagePublisher.HandleBetAsync(HandleMessageMapper.PlaceBetAndSettle(criteria, spResult.RefNo ?? 0), cancellationToken);
-
-			return res;
+			return await ProcessBetAsync(request, bet, cancellationToken).ConfigureAwait(false);
 		}
 		catch (Exception ex)
 		{
@@ -115,8 +45,102 @@ public class PlaceBetAndSettleHandler(
 		}
 	}
 
+	private async Task<PlaceBetAndSettleResult> ProcessBetAsync(PlaceBetAndSettleRequest request, PlaceBetAndSettleDataSet bet, CancellationToken cancellationToken)
+	{
+		BalanceResponse? balanceResponse = null;
+		var adjustAmount = CalculateAdjustAmount(bet);
+		var refId = bet.TicketNo;
+		var playerCode = request.Payload.OperatorCustId.ToPlayerCode();
+
+		if (adjustAmount < 0)
+		{
+			balanceResponse = await cashServiceClient.GameProviderDeductBalanceAsync(
+				playerCode,
+				Math.Abs(adjustAmount),
+				new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, ActionConstants.PlaceBetAndSettlePlaceBet),
+				cancellationToken: cancellationToken);
+
+			if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
+			{
+				return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(balanceResponse.ErrorCode, balanceResponse.ErrorMessage);
+			}
+		}
+
+		var (criteria, spResult) = await InsertBetTransAsync(request, bet);
+		var isFailedSp = !ErrorMapper.IsSuccess(spResult?.StatusCode ?? "0");
+
+		if (IsAddBalance(adjustAmount, isFailedSp))
+		{
+			var action = isFailedSp ? ActionConstants.PlaceBetAndSettleFail : ActionConstants.PlaceBetAndSettlePlaceBet;
+
+			balanceResponse = await cashServiceClient.GameProviderAddBalanceAsync(
+				playerCode,
+				Math.Abs(adjustAmount),
+				new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, action),
+				cancellationToken: cancellationToken);
+
+			if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
+			{
+				return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(balanceResponse.ErrorCode, balanceResponse.ErrorMessage);
+			}
+		}
+
+		if (isFailedSp)
+		{
+			return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(spResult.StatusCode, spResult?.ErrMsg ?? string.Empty);
+		}
+
+		if (adjustAmount == 0)
+		{
+			balanceResponse = await cashServiceClient.GameProviderGetBalanceAsync(playerCode, cancellationToken).ConfigureAwait(false);
+		}
+
+		var balance = balanceResponse?.Balance ?? 0;
+
+		await messagePublisher.HandleBetAsync(HandleMessageMapper.PlaceBetAndSettle(criteria, spResult?.RefNo ?? 0), cancellationToken);
+
+		return GenerateSuccessResult(request, bet, spResult, balance);
+	}
+
+	private async Task<(PlaceBetAndSettleCriteria, SPResult)> InsertBetTransAsync(PlaceBetAndSettleRequest request, PlaceBetAndSettleDataSet bet)
+	{
+		var criteria = ConvertToCriteria(request.TimeStamp, request.Seq, request.Payload, bet);
+		var spResult = await gameProviderRepository.CallStoredProcedureAsync<PlaceBetAndSettleCriteria, SPResult>(
+						criteria,
+						StoreProcedureMapper.InsertSignalSP);
+
+		return (criteria, spResult);
+	}
+
+	private static decimal CalculateAdjustAmount(PlaceBetAndSettleDataSet bet)
+	{
+		var betAmount = bet.ActualStake;
+		var payout = bet.Payout;
+		var adjustAmount = payout - betAmount;
+
+		return adjustAmount;
+	}
+
+	private static PlaceBetAndSettleResult GenerateSuccessResult(
+		PlaceBetAndSettleRequest request,
+		PlaceBetAndSettleDataSet bet,
+		SPResult spResult,
+		decimal balance)
+	{
+		var refNo = spResult.RefNo.ToString();
+		var dataSets = new PlaceBetAndSettleResultDataSet { RefNo = refNo, TicketNo = bet.TicketNo };
+		var res = new PlaceBetAndSettleResult
+		{
+			Payload = new PlaceBetAndSettlePayload(request.Payload.OperatorCustId, balance, [dataSets])
+		};
+
+		return res;
+	}
+
 	private static bool IsAddBalance(decimal adjustAmount, bool failedSp)
-		=> failedSp && adjustAmount < 0 || adjustAmount > 0;
+		=> ShouldRefund(adjustAmount, failedSp) || adjustAmount > 0;
+
+	private static bool ShouldRefund(decimal adjustAmount, bool failedSp) => failedSp && adjustAmount < 0;
 
 	private PlaceBetAndSettleCriteria ConvertToCriteria(
 		string TimeStamp,
