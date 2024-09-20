@@ -25,4 +25,6 @@ public class FreeSpinDataSet
 	public decimal Payout { get; set; }
 
 	public string SettleDate { get; set; }
+
+	public string? SettleDateWithTz { get; set; }
 }

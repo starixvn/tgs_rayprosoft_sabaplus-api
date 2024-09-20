@@ -30,7 +30,7 @@ public class PlaceBetAndSettleHandler(
 			if (bets?.Length == 0)
 			{
 				return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(
-					ErrorMapper.ParameterIncorrect.ToString(),
+					ErrorMapper.ParameterIncorrect,
 					ErrorMapper.GetErrorMessage(ErrorMapper.ParameterIncorrect));
 			}
 

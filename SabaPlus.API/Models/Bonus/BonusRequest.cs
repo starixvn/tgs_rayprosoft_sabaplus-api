@@ -27,4 +27,6 @@ public class BonusDataSet
 	public string? PrizeName { get; set; }
 
 	public string SettleDate { get; set; }
+
+	public string? SettleDateWithTz { get; set; }
 }

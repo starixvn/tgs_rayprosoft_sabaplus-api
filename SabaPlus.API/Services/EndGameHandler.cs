@@ -81,14 +81,14 @@ public class EndGameHandler(
 
 	private async ValueTask<BalanceResponse> AddBalanceAsync(EndGameRequest request, string gameProviderCode, CancellationToken cancellationToken)
 	{
-		var amount = request.Payload.BetDataSet?.Sum(data => data.Payout);
+		var amount = request.Payload.BetDataSet.Sum(data => data.Payout);
 		var refId = string.Join('@', request.Payload.BetDataSet.Select(betData => betData.TicketNo));
 
 		if (amount > 0)
 		{
 			return await cashClient.GameProviderAddBalanceAsync(
 				request.Payload.OperatorCustId!.ToPlayerCode(),
-				amount!.Value,
+				amount,
 				new Tgs.CashService.ProviderInfo(gameProviderCode!, refId, request.Seq, ActionConstants.EndGame),
 				string.Empty,
 				cancellationToken);

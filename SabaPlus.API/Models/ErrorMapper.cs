@@ -7,6 +7,7 @@ public static class ErrorMapper
 	public static int ParameterIncorrect = 1007;
 	public static int AccountNotExist = 2003;
 	public static int InsufficientFunds = 3002;
+	public static int PlayerExceededGameLimit = 3003;
 	public static int DuplicateTransaction = 3017;
 
 	public static Dictionary<string, int> InternalErrorCodes = new()
@@ -27,6 +28,7 @@ public static class ErrorMapper
 		[ParameterIncorrect] = "Parameter(s) Incorrect",
 		[AccountNotExist] = "Account does not exist",
 		[InsufficientFunds] = "Player has insufficient funds",
+		[PlayerExceededGameLimit] = "The player exceeded their game limit",
 		[DuplicateTransaction] = "Duplicate Transaction",
 	};
 

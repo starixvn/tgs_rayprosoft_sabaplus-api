@@ -2,4 +2,4 @@
 
 public class EndGameResult : GameProviderResponse<EndGameResponsePayload>;
 
-public record EndGameResponsePayload(string? OperatorCustId, decimal? Balance);
+public record EndGameResponsePayload(string OperatorCustId, decimal Balance);
