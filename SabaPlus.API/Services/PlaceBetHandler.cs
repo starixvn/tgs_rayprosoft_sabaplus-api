@@ -25,13 +25,10 @@ public class PlaceBetGetHandler(
 	{
 		try
 		{
-			var betAmount = request.Payload.BetDataSet.Sum(betData => betData.ActualStake);
-			var refId = string.Join('@', request.Payload.BetDataSet.Select(betData => betData.TicketNo));
-			var seq = request.Seq;
-
 			var balanceResult = await DeductBalanceAsync(request, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
+				await RefundBalanceAsync(request, cancellationToken);
 				return ResultHelper.GenerateFailedResult<PlaceBetResult, PlaceBetResponsePayload>(balanceResult.ErrorCode, balanceResult.ErrorMessage);
 			}
 
@@ -41,11 +38,11 @@ public class PlaceBetGetHandler(
 			if (failedSp != default)
 			{
 				await RefundBalanceAsync(request, cancellationToken);
-				return ResultHelper.GenerateFailedResult<PlaceBetResult, PlaceBetResponsePayload>(failedSp.StatusCode!, failedSp.ErrMsg);
+				return ResultHelper.GenerateFailedResult<PlaceBetResult, PlaceBetResponsePayload>(failedSp.StatusCode, failedSp.ErrMsg);
 			}
 
-			var betDataSet = spResults.Select((spResult, index) =>
-								new PlaceBetResultDataSet { RefNo = spResult.RefNo.ToString(), TicketNo = request.Payload.BetDataSet[index].TicketNo });
+			var betDataSet = spResults.Select((result, index) =>
+								new PlaceBetResultDataSet { RefNo = result.RefNo.ToString(), TicketNo = request.Payload.BetDataSet[index].TicketNo });
 			var res = new PlaceBetResult
 			{
 				Payload = new PlaceBetResponsePayload(request.Payload.OperatorCustId, balanceResult.Balance, betDataSet.ToArray())
@@ -63,46 +60,53 @@ public class PlaceBetGetHandler(
 
 	private async ValueTask<BalanceResponse> DeductBalanceAsync(PlaceBetRequest request, CancellationToken cancellationToken)
 	{
-		var betAmount = request.Payload.BetDataSet.Sum(betData => betData.ActualStake);
-		var refId = string.Join('@', request.Payload.BetDataSet.Select(betData => betData.TicketNo));
-		return await cashClient.GameProviderDeductBalanceAsync(
-			request.Payload.OperatorCustId!.ToPlayerCode(),
-			betAmount,
-			new ProviderInfo(request.Payload.GameProviderCode!, refId, request.Seq, ActionConstants.PlaceBet),
-			string.Empty,
-			cancellationToken
-			).ConfigureAwait(false);
+		var playerCode = request.Payload.OperatorCustId!.ToPlayerCode();
+		var res = new BalanceResponse();
+		foreach (var bet in request.Payload.BetDataSet)
+		{
+			res = await cashClient.GameProviderDeductBalanceAsync(
+				request.Payload.OperatorCustId!.ToPlayerCode(),
+				bet.ActualStake,
+				new ProviderInfo(request.Payload.GameProviderCode!, bet.TicketNo, request.Seq, ActionConstants.PlaceBet),
+				string.Empty,
+				cancellationToken
+				).ConfigureAwait(false);
+			if (!ErrorMapper.IsSuccess(res.ErrorCode))
+			{
+				return res;
+			}
+		}
+		return res;
 	}
 
 	private async ValueTask RefundBalanceAsync(PlaceBetRequest request, CancellationToken cancellationToken)
 	{
-		var betAmount = request.Payload.BetDataSet.Sum(betData => betData.ActualStake);
-		var refId = string.Join('@', request.Payload.BetDataSet.Select(betData => betData.TicketNo));
-		await cashClient.GameProviderAddBalanceAsync(
-			request.Payload.OperatorCustId!.ToPlayerCode(),
-			betAmount,
-			new ProviderInfo(request.Payload.GameProviderCode!, refId, request.Seq, ActionConstants.PlaceBetFail),
-			string.Empty,
-			cancellationToken
-			).ConfigureAwait(false);
-	}
-
-	private async Task<List<SPResult>> InsertTransactionsAsync(IEnumerable<PlaceBetCriteria> criteriaList)
-	{
-		var result = new List<SPResult>();
-		foreach (var criteria in criteriaList)
+		var playerCode = request.Payload.OperatorCustId!.ToPlayerCode();
+		foreach (var bet in request.Payload.BetDataSet)
 		{
-			var spResult = await gameProviderRepository.CallStoredProcedureAsync<PlaceBetCriteria, SPResult>(criteria, StoreProcedureMapper.InsertSignalSP);
-			result.Add(spResult);
+			if (await cashClient.IsExistGameProviderTransactionLogAsync(playerCode,
+				new ProviderInfo(request.Payload.GameProviderCode!, bet.TicketNo, request.Seq, ActionConstants.PlaceBet)))
+			{
+				await cashClient.GameProviderAddBalanceAsync(
+				playerCode,
+				bet.ActualStake,
+				new ProviderInfo(request.Payload.GameProviderCode!, bet.TicketNo, request.Seq, ActionConstants.PlaceBetFail),
+				string.Empty,
+				cancellationToken
+				).ConfigureAwait(false);
+			}
+			else
+			{
+				break;
+			}
 		}
-		return result;
 	}
 
 	private IEnumerable<PlaceBetCriteria> GetPlaceBetCriterias(PlaceBetRequest request)
 	{
-		return request.Payload.BetDataSet.Select(betData =>
+		return request.Payload.BetDataSet.Select(bet =>
 		{
-			var criteria = mapper.Map<PlaceBetCriteria>(betData!);
+			var criteria = mapper.Map<PlaceBetCriteria>(bet);
 			criteria.TransDate = DateTime.Parse(request.TimeStamp).ToUniversalTime();
 			criteria.Seq = request.Seq;
 			criteria.OperatorCustId = request.Payload.OperatorCustId;
@@ -111,6 +115,17 @@ public class PlaceBetGetHandler(
 			criteria.GameProviderCode = request.Payload.GameProviderCode;
 			return criteria;
 		});
+	}
+
+	private async Task<List<SPResult>> InsertTransactionsAsync(IEnumerable<PlaceBetCriteria> criterias)
+	{
+		var results = new List<SPResult>();
+		foreach (var criteria in criterias)
+		{
+			var result = await gameProviderRepository.CallStoredProcedureAsync<PlaceBetCriteria, SPResult>(criteria, StoreProcedureMapper.InsertSignalSP);
+			results.Add(result);
+		}
+		return results;
 	}
 
 	private async Task PublishBetAsync(IEnumerable<PlaceBetCriteria> criteriaList, List<SPResult> spResults, CancellationToken cancellationToken)
