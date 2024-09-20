@@ -57,7 +57,7 @@ public class PlaceBetAndSettleHandler(
 			balanceResponse = await cashServiceClient.GameProviderDeductBalanceAsync(
 				playerCode,
 				Math.Abs(adjustAmount),
-				new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, ActionConstants.PlaceBetAndSettlePlaceBet),
+				new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, ActionConstants.PlaceBetAndSettle),
 				cancellationToken: cancellationToken);
 
 			if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
@@ -71,7 +71,7 @@ public class PlaceBetAndSettleHandler(
 
 		if (IsAddBalance(adjustAmount, isFailedSp))
 		{
-			var action = isFailedSp ? ActionConstants.PlaceBetAndSettleFail : ActionConstants.PlaceBetAndSettlePlaceBet;
+			var action = isFailedSp ? ActionConstants.PlaceBetAndSettleFail : ActionConstants.PlaceBetAndSettle;
 
 			balanceResponse = await cashServiceClient.GameProviderAddBalanceAsync(
 				playerCode,
