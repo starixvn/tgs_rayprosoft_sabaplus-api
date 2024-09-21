@@ -17,7 +17,8 @@ namespace SabaPlus.API.Controllers
 	public class PlayerController(IMediator mediator) : ControllerBase
 	{
 		[HttpPost("placebet")]
-		public async Task<PlaceBetResult> PlaceBetAsync(PlaceBetRequest request) => await mediator.Send(request).ConfigureAwait(false);
+		public async Task<PlaceBetResult> PlaceBetAsync(PlaceBetRequest request)
+			=> await mediator.Send(request).ConfigureAwait(false);
 
 		[HttpPost("getbalance")]
 		public async Task<GetBalanceResult> GetBalanceAsync(GetBalanceRequest request)
@@ -36,12 +37,15 @@ namespace SabaPlus.API.Controllers
 			=> await mediator.Send(request).ConfigureAwait(false);
 
 		[HttpPost("FreeSpin")]
-		public Task<FreeSpinResult> FreeSpin(FreeSpinRequest request) => mediator.Send(request);
+		public async Task<FreeSpinResult> FreeSpinAsync(FreeSpinRequest request)
+			=> await mediator.Send(request).ConfigureAwait(false);
 
 		[HttpPost("VoidGame")]
-		public Task<VoidGameResult> VoidGame(VoidGameRequest request) => mediator.Send(request);
+		public async Task<VoidGameResult> VoidGameAsync(VoidGameRequest request)
+			=> await mediator.Send(request).ConfigureAwait(false);
 
 		[HttpPost("Bonus")]
-		public Task<BonusResult> Bonus(BonusRequest request) => mediator.Send(request);
+		public async Task<BonusResult> BonusAsync(BonusRequest request)
+			=> await mediator.Send(request).ConfigureAwait(false);
 	}
 }

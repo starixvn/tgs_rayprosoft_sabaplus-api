@@ -47,7 +47,7 @@ public class PlaceBetAndSettleHandler(
 					ErrorMapper.GetErrorMessage(ErrorMapper.InsufficientFunds));
 			}
 
-			return await ProcessBetAsync(request, bet, cancellationToken).ConfigureAwait(false);
+			return await ProcessBetAsync(request, bet, balance, cancellationToken).ConfigureAwait(false);
 		}
 		catch (Exception ex)
 		{
@@ -56,7 +56,11 @@ public class PlaceBetAndSettleHandler(
 		}
 	}
 
-	private async Task<PlaceBetAndSettleResult> ProcessBetAsync(PlaceBetAndSettleRequest request, PlaceBetAndSettleDataSet bet, CancellationToken cancellationToken)
+	private async Task<PlaceBetAndSettleResult> ProcessBetAsync(
+		PlaceBetAndSettleRequest request,
+		PlaceBetAndSettleDataSet bet,
+		decimal currentBalance,
+		CancellationToken cancellationToken)
 	{
 		BalanceResponse? balanceResponse = null;
 		var adjustAmount = CalculateAdjustAmount(bet);
@@ -101,12 +105,7 @@ public class PlaceBetAndSettleHandler(
 			return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(spResult.StatusCode, spResult?.ErrMsg ?? string.Empty);
 		}
 
-		if (adjustAmount == 0)
-		{
-			balanceResponse = await cashServiceClient.GameProviderGetBalanceAsync(playerCode, cancellationToken).ConfigureAwait(false);
-		}
-
-		var balance = balanceResponse?.Balance ?? 0;
+		var balance = balanceResponse?.Balance ?? currentBalance;
 
 		await messagePublisher.HandleBetAsync(HandleMessageMapper.PlaceBetAndSettle(criteria, spResult?.RefNo ?? 0), cancellationToken);
 
