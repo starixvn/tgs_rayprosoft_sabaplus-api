@@ -1,14 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using SabaPlus.API.Middlewares.Attributes;
 using SabaPlus.API.Models.Balance;
 using SabaPlus.API.Models.Bonus;
+using SabaPlus.API.Models.EndGame;
 using SabaPlus.API.Models.FreeSpin;
 using SabaPlus.API.Models.PlaceBet;
 using SabaPlus.API.Models.PlaceBetAndSettle;
 using SabaPlus.API.Models.PlayerInfo;
-using SabaPlus.API.Models.EndGame;
 using SabaPlus.API.Models.VoidGame;
-using MediatR;
-using SabaPlus.API.Middlewares.Attributes;
 
 namespace SabaPlus.API.Controllers
 {
@@ -17,20 +17,23 @@ namespace SabaPlus.API.Controllers
 	public class PlayerController(IMediator mediator) : ControllerBase
 	{
 		[HttpPost("placebet")]
-		public Task<PlaceBetResult> PlaceBet(PlaceBetRequest request) => mediator.Send(request);
+		public async Task<PlaceBetResult> PlaceBetAsync(PlaceBetRequest request) => await mediator.Send(request).ConfigureAwait(false);
 
 		[HttpPost("getbalance")]
-		public Task<GetBalanceResult> GetBalance(GetBalanceRequest request) => mediator.Send(request);
+		public async Task<GetBalanceResult> GetBalanceAsync(GetBalanceRequest request)
+			=> await mediator.Send(request).ConfigureAwait(false);
 
 		[HttpPost("endgame")]
 		[ReadableBody]
-		public Task<EndGameResult> EndGame(EndGameRequest request) => mediator.Send(request);
+		public async Task<EndGameResult> EndGameAsync(EndGameRequest request) => await mediator.Send(request).ConfigureAwait(false);
 
 		[HttpPost("GetPlayerInfo")]
-		public Task<GetPlayerInfoResult> GetPlayerInfo(GetPlayerInfoRequest request) => mediator.Send(request);
+		public async Task<GetPlayerInfoResult> GetPlayerInfoAsync(GetPlayerInfoRequest request)
+			=> await mediator.Send(request).ConfigureAwait(false);
 
 		[HttpPost("PlaceBetAndSettle")]
-		public Task<PlaceBetAndSettleResult> PlaceBetAndSettle(PlaceBetAndSettleRequest request) => mediator.Send(request);
+		public async Task<PlaceBetAndSettleResult> PlaceBetAndSettleAsync(PlaceBetAndSettleRequest request)
+			=> await mediator.Send(request).ConfigureAwait(false);
 
 		[HttpPost("FreeSpin")]
 		public Task<FreeSpinResult> FreeSpin(FreeSpinRequest request) => mediator.Send(request);

@@ -26,6 +26,7 @@ public class PlaceBetAndSettleHandler(
 		try
 		{
 			var bets = request.Payload.BetDataSet;
+			var playerCode = request.Payload.OperatorCustId.ToPlayerCode();
 
 			if (bets?.Length == 0)
 			{
@@ -35,6 +36,16 @@ public class PlaceBetAndSettleHandler(
 			}
 
 			var bet = bets.First();
+
+			var balanceResponse = await cashServiceClient.GameProviderGetBalanceAsync(playerCode, cancellationToken).ConfigureAwait(false);
+			var balance = balanceResponse?.Balance ?? 0;
+
+			if (balance < bet.ActualStake)
+			{
+				return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(
+					ErrorMapper.InsufficientFunds.ToString(),
+					ErrorMapper.GetErrorMessage(ErrorMapper.InsufficientFunds));
+			}
 
 			return await ProcessBetAsync(request, bet, cancellationToken).ConfigureAwait(false);
 		}
