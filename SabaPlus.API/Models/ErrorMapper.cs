@@ -17,8 +17,8 @@ public static class ErrorMapper
 		["201"] = UnspecifiedError,
 		["202"] = DuplicateTransaction,
 		["203"] = AccountNotExist,
-		["204"] = InsufficientFunds,
-		["205"] = ParameterIncorrect,
+		["204"] = ParameterIncorrect,
+		["205"] = InsufficientFunds,
 		["206"] = ParameterIncorrect,
 	};
 

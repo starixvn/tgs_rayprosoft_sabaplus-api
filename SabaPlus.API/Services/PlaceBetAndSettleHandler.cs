@@ -43,7 +43,7 @@ public class PlaceBetAndSettleHandler(
 			if (balance < bet.ActualStake)
 			{
 				return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(
-					ErrorMapper.InsufficientFunds.ToString(),
+					ErrorMapper.InsufficientFunds,
 					ErrorMapper.GetErrorMessage(ErrorMapper.InsufficientFunds));
 			}
 

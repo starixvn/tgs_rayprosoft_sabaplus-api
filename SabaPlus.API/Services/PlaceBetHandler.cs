@@ -64,13 +64,20 @@ public class PlaceBetGetHandler(
 		var res = new BalanceResponse();
 		foreach (var bet in request.Payload.BetDataSet)
 		{
-			res = await cashClient.GameProviderDeductBalanceAsync(
-				request.Payload.OperatorCustId!.ToPlayerCode(),
-				bet.ActualStake,
-				new ProviderInfo(request.Payload.GameProviderCode!, bet.TicketNo, request.Seq, ActionConstants.PlaceBet),
-				string.Empty,
-				cancellationToken
-				).ConfigureAwait(false);
+			if (IsFreeBet(bet))
+			{
+				res = await cashClient.GameProviderGetBalanceAsync(playerCode, cancellationToken);
+			}
+			else
+			{
+				res = await cashClient.GameProviderDeductBalanceAsync(
+					request.Payload.OperatorCustId!.ToPlayerCode(),
+					bet.ActualStake,
+					new ProviderInfo(request.Payload.GameProviderCode!, bet.TicketNo, request.Seq, ActionConstants.PlaceBet),
+					string.Empty,
+					cancellationToken
+					).ConfigureAwait(false);
+			}
 			if (!ErrorMapper.IsSuccess(res.ErrorCode))
 			{
 				return res;
@@ -79,11 +86,26 @@ public class PlaceBetGetHandler(
 		return res;
 	}
 
+	private bool IsFreeBet(PlaceBetDataSet bet)
+	{
+		var freeBetKey = "FreeBet";
+		var freeSpinKey = "FreeSpin";
+		if (bet.ActualStake == 0 && bet.OtherBetInfo != null && (bet.OtherBetInfo.ContainsKey(freeBetKey) || bet.OtherBetInfo.ContainsKey(freeSpinKey)))
+		{
+			return bet.OtherBetInfo[freeBetKey] == "True" || bet.OtherBetInfo[freeSpinKey] == "True";
+		}
+		return false;
+	}
+
 	private async ValueTask RefundBalanceAsync(PlaceBetRequest request, CancellationToken cancellationToken)
 	{
 		var playerCode = request.Payload.OperatorCustId!.ToPlayerCode();
 		foreach (var bet in request.Payload.BetDataSet)
 		{
+			if (IsFreeBet(bet))
+			{
+				continue;
+			}
 			if (await cashClient.IsExistGameProviderTransactionLogAsync(playerCode,
 				new ProviderInfo(request.Payload.GameProviderCode!, bet.TicketNo, request.Seq, ActionConstants.PlaceBet)))
 			{
