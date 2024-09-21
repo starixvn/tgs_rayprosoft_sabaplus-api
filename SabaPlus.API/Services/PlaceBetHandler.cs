@@ -16,6 +16,7 @@ namespace SabaPlus.API.Services;
 public class PlaceBetGetHandler(
 	ISabaPlusApiMessagePublishHandler messagePublisher,
 	IGameProviderRepository gameProviderRepository,
+	IPlayerRepository playerRepository,
 	ICashServiceClient cashClient,
 	IMapper mapper,
 	ISentryClient sentryClient
@@ -25,6 +26,11 @@ public class PlaceBetGetHandler(
 	{
 		try
 		{
+			if (!(await IsValidBetAmountAsync(request)))
+			{
+				return ResultHelper.GenerateFailedResult<PlaceBetResult, PlaceBetResponsePayload>(ErrorMapper.PlayerExceededGameLimit, ErrorMapper.ErrorMessage[ErrorMapper.PlayerExceededGameLimit]);
+			}
+			
 			var (balanceResult, deductedTicket) = await DeductBalanceAsync(request, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
@@ -56,6 +62,19 @@ public class PlaceBetGetHandler(
 			sentryClient.CaptureException(ex);
 			return new PlaceBetResult { ErrorCode = ErrorMapper.UnspecifiedError };
 		}
+	}
+
+	private async ValueTask<bool> IsValidBetAmountAsync(PlaceBetRequest request)
+	{
+		var (minBet, maxBet) = await playerRepository.GetMinAndMaxBetAsync(request.Payload.OperatorCustId.ToPlayerCode(), request.Payload.GameProviderCode);
+		foreach (var bet in request.Payload.BetDataSet)
+		{
+			if (!IsFreeBet(bet) && (bet.ActualStake < minBet || bet.ActualStake > maxBet))
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private async ValueTask<(BalanceResponse, int)> DeductBalanceAsync(PlaceBetRequest request, CancellationToken cancellationToken)

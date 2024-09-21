@@ -2,6 +2,7 @@
 using MediatR;
 using SabaPlus.API.Messages;
 using SabaPlus.API.Models;
+using SabaPlus.API.Models.PlaceBet;
 using SabaPlus.API.Models.PlaceBetAndSettle;
 using SabaPlus.API.Services.Shared;
 using SabaPlus.Common;
@@ -17,6 +18,7 @@ public class PlaceBetAndSettleHandler(
 	ISabaPlusApiMessagePublishHandler messagePublisher,
 	ICashServiceClient cashServiceClient,
 	IGameProviderRepository gameProviderRepository,
+	IPlayerRepository playerRepository,
 	IMapper mapper,
 	ISentryClient sentryClient
 	) : IRequestHandler<PlaceBetAndSettleRequest, PlaceBetAndSettleResult>
@@ -25,17 +27,15 @@ public class PlaceBetAndSettleHandler(
 	{
 		try
 		{
-			var bets = request.Payload.BetDataSet;
-			var playerCode = request.Payload.OperatorCustId.ToPlayerCode();
-
-			if (bets?.Length == 0)
+			var betErrorCode = await IsValidBetAsync(request);
+			if (betErrorCode != ErrorMapper.Success)
 			{
 				return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(
-					ErrorMapper.ParameterIncorrect,
-					ErrorMapper.GetErrorMessage(ErrorMapper.ParameterIncorrect));
+					betErrorCode,
+					ErrorMapper.GetErrorMessage(betErrorCode));
 			}
-
-			var bet = bets.First();
+			var playerCode = request.Payload.OperatorCustId.ToPlayerCode();
+			var bet = request.Payload.BetDataSet.First();
 
 			var balanceResponse = await cashServiceClient.GameProviderGetBalanceAsync(playerCode, cancellationToken).ConfigureAwait(false);
 			var balance = balanceResponse?.Balance ?? 0;
@@ -54,6 +54,24 @@ public class PlaceBetAndSettleHandler(
 			_ = sentryClient.CaptureException(ex);
 			return new PlaceBetAndSettleResult { ErrorCode = ErrorMapper.UnspecifiedError };
 		}
+	}
+
+	private async ValueTask<int> IsValidBetAsync(PlaceBetAndSettleRequest request)
+	{
+		var bets = request.Payload.BetDataSet;
+		if (request.Payload.BetDataSet.Length == 0)
+		{
+			return ErrorMapper.ParameterIncorrect;
+		}
+
+		var bet = bets.First();
+		var (minBet, maxBet) = await playerRepository.GetMinAndMaxBetAsync(request.Payload.OperatorCustId.ToPlayerCode(), request.Payload.GameProviderCode);
+
+		if ((bet.ActualStake < minBet || bet.ActualStake > maxBet))
+		{
+			return ErrorMapper.PlayerExceededGameLimit;
+		}
+		return ErrorMapper.Success;
 	}
 
 	private async Task<PlaceBetAndSettleResult> ProcessBetAsync(
