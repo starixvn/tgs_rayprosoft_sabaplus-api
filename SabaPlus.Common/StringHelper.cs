@@ -1,4 +1,4 @@
-﻿namespace SabaPlus.API;
+﻿namespace SabaPlus.Common;
 
 public static class StringHelper
 {

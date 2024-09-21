@@ -26,7 +26,7 @@ public class EndGameHandler(
 		{
 			var gameProviderCode = await gameProviderRepository.GetGameProviderCodeByGameTypeAsync(request.Payload.GameType!);
 
-			var criteriaList = GetEndGameCriteriasAsync(request, gameProviderCode);
+			var criteriaList = GetEndGameCriterias(request, gameProviderCode);
 			var spResults = await SettleTransactionsAsync(criteriaList);
 			var failedSp = spResults.Find(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode!));
 
@@ -66,7 +66,7 @@ public class EndGameHandler(
 		return result;
 	}
 
-	private IEnumerable<EndGameCriteria> GetEndGameCriteriasAsync(EndGameRequest request, string gameProviderCode)
+	private IEnumerable<EndGameCriteria> GetEndGameCriterias(EndGameRequest request, string gameProviderCode)
 	{
 		return request.Payload.BetDataSet.Select(betData =>
 		{

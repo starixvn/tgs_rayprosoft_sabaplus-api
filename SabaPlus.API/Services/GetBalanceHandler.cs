@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using SabaPlus.API.Models;
 using SabaPlus.API.Models.Balance;
+using SabaPlus.Common;
 using Tgs.CashService.Client;
 
 namespace SabaPlus.API.Services;
