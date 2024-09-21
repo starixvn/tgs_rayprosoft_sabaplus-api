@@ -101,7 +101,7 @@ builder.Services.Configure<IISServerOptions>(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (builder.Configuration.GetValue<string>("Env") == "LOCAL")
+if (builder.Configuration.GetValue<string>("Env") == "DEV")
 {
 	app.UseSwagger();
 	app.UseSwaggerUI();
