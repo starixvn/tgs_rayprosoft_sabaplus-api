@@ -65,7 +65,7 @@ public class PlaceBetAndSettleHandler(
 		}
 
 		var bet = bets.First();
-		var (minBet, maxBet) = await playerRepository.GetMinAndMaxBetAsync(request.Payload.OperatorCustId.ToPlayerCode(), request.Payload.GameProviderCode);
+		var (minBet, maxBet) = await playerRepository.GetMinAndMaxBetAsync(request.Payload.OperatorCustId.ToPlayerCode(), GetGameProviderCode(request));
 
 		if ((bet.ActualStake < minBet || bet.ActualStake > maxBet))
 		{
@@ -84,13 +84,14 @@ public class PlaceBetAndSettleHandler(
 		var adjustAmount = CalculateAdjustAmount(bet);
 		var refId = bet.TicketNo;
 		var playerCode = request.Payload.OperatorCustId.ToPlayerCode();
+		var gameProviderCode = GetGameProviderCode(request);
 
 		if (adjustAmount < 0)
 		{
 			balanceResponse = await cashServiceClient.GameProviderDeductBalanceAsync(
 				playerCode,
 				Math.Abs(adjustAmount),
-				new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, ActionConstants.PlaceBetAndSettle),
+				new ProviderInfo(gameProviderCode, refId, request.Seq, ActionConstants.PlaceBetAndSettle),
 				cancellationToken: cancellationToken);
 
 			if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
@@ -109,7 +110,7 @@ public class PlaceBetAndSettleHandler(
 			balanceResponse = await cashServiceClient.GameProviderAddBalanceAsync(
 				playerCode,
 				Math.Abs(adjustAmount),
-				new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, action),
+				new ProviderInfo(gameProviderCode, refId, request.Seq, action),
 				cancellationToken: cancellationToken);
 
 			if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
@@ -132,7 +133,7 @@ public class PlaceBetAndSettleHandler(
 
 	private async Task<(PlaceBetAndSettleCriteria, SPResult)> InsertBetTransAsync(PlaceBetAndSettleRequest request, PlaceBetAndSettleDataSet bet)
 	{
-		var criteria = ConvertToCriteria(request.TimeStamp, request.Seq, request.Payload, bet);
+		var criteria = ConvertToCriteria(request.TimeStamp, request.Seq, request, bet);
 		var spResult = await gameProviderRepository.CallStoredProcedureAsync<PlaceBetAndSettleCriteria, SPResult>(
 						criteria,
 						StoreProcedureMapper.InsertSignalSP);
@@ -173,17 +174,22 @@ public class PlaceBetAndSettleHandler(
 	private PlaceBetAndSettleCriteria ConvertToCriteria(
 		string TimeStamp,
 		string Seq,
-		PlaceBetAndSettleRequestPayload payload,
+		PlaceBetAndSettleRequest request,
 		PlaceBetAndSettleDataSet betData)
 	{
+		var payload = request.Payload;
 		var criteria = mapper.Map<PlaceBetAndSettleCriteria>(betData!);
+
 		criteria.TransDate = DateTime.Parse(TimeStamp).ToUniversalTime();
 		criteria.Seq = Seq;
 		criteria.OperatorCustId = payload.OperatorCustId;
 		criteria.GameType = payload.GameType;
 		criteria.IpAddress = payload.IpAddress;
-		criteria.GameProviderCode = payload.GameProviderCode;
+		criteria.GameProviderCode = GetGameProviderCode(request);
 
 		return criteria;
 	}
+
+	private static string GetGameProviderCode(PlaceBetAndSettleRequest request)
+		=> request.GameProviderCode ?? request.Payload.GameProviderCode;
 }

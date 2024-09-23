@@ -1,6 +1,11 @@
 ﻿namespace SabaPlus.API.Models;
 
-public class GameProviderRequest<TPayload>
+public class GameProviderRequestWithCode
+{
+	public string? GameProviderCode { get; set; } = default;
+}
+
+public class GameProviderRequest<TPayload> : GameProviderRequestWithCode
 {
 	public string TimeStamp { get; set; }
 
