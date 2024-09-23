@@ -21,6 +21,11 @@ builder.Services
 		var config = sp.GetRequiredService<IConfiguration>();
 		op.BaseUrl = config.GetValue<Uri>("ServicesUrl:CashClientBaseUrl")!;
 	})
+	.AddGameProvidersClient((options, sercice) =>
+	{
+		var config = sercice.GetRequiredService<IConfiguration>();
+		options.BaseUrl = config.GetValue<Uri>("ServicesUrl:GameProvidersClientBaseUrl")!;
+	})
 	.AddMemoryCache();
 
 var env = builder.Configuration.GetValue<string>("Env");
