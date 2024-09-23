@@ -25,10 +25,10 @@ public class PlaceBetGetHandler(
 	{
 		try
 		{
-			var balanceResult = await DeductBalanceAsync(request, cancellationToken);
+			var (balanceResult, deductedTicket) = await DeductBalanceAsync(request, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
-				await RefundBalanceAsync(request, cancellationToken);
+				await RefundBalanceAsync(request, deductedTicket, cancellationToken);
 				return ResultHelper.GenerateFailedResult<PlaceBetResult, PlaceBetResponsePayload>(balanceResult.ErrorCode, balanceResult.ErrorMessage);
 			}
 
@@ -37,7 +37,7 @@ public class PlaceBetGetHandler(
 			var failedSp = spResults.Find(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode!));
 			if (failedSp != default)
 			{
-				await RefundBalanceAsync(request, cancellationToken);
+				await RefundBalanceAsync(request, deductedTicket, cancellationToken);
 				return ResultHelper.GenerateFailedResult<PlaceBetResult, PlaceBetResponsePayload>(failedSp.StatusCode, failedSp.ErrMsg);
 			}
 
@@ -58,10 +58,11 @@ public class PlaceBetGetHandler(
 		}
 	}
 
-	private async ValueTask<BalanceResponse> DeductBalanceAsync(PlaceBetRequest request, CancellationToken cancellationToken)
+	private async ValueTask<(BalanceResponse, int)> DeductBalanceAsync(PlaceBetRequest request, CancellationToken cancellationToken)
 	{
 		var playerCode = request.Payload.OperatorCustId!.ToPlayerCode();
 		var res = new BalanceResponse();
+		var deductedTicket = 0;
 		foreach (var bet in request.Payload.BetDataSet)
 		{
 			if (IsFreeBet(bet))
@@ -78,12 +79,13 @@ public class PlaceBetGetHandler(
 					cancellationToken
 					).ConfigureAwait(false);
 			}
+			deductedTicket++;
 			if (!ErrorMapper.IsSuccess(res.ErrorCode))
 			{
-				return res;
+				return (res, deductedTicket);
 			}
 		}
-		return res;
+		return (res, deductedTicket);
 	}
 
 	private bool IsFreeBet(PlaceBetDataSet bet)
@@ -97,17 +99,13 @@ public class PlaceBetGetHandler(
 		return false;
 	}
 
-	private async ValueTask RefundBalanceAsync(PlaceBetRequest request, CancellationToken cancellationToken)
+	private async ValueTask RefundBalanceAsync(PlaceBetRequest request, int deductedTicket, CancellationToken cancellationToken)
 	{
 		var playerCode = request.Payload.OperatorCustId!.ToPlayerCode();
-		foreach (var bet in request.Payload.BetDataSet)
+		for (var i = 0; i < deductedTicket; i++)
 		{
-			if (IsFreeBet(bet))
-			{
-				continue;
-			}
-			if (await cashClient.IsExistGameProviderTransactionLogAsync(playerCode,
-				new ProviderInfo(request.Payload.GameProviderCode!, bet.TicketNo, request.Seq, ActionConstants.PlaceBet)))
+			var bet = request.Payload.BetDataSet[i];
+			if (!IsFreeBet(bet))
 			{
 				await cashClient.GameProviderAddBalanceAsync(
 				playerCode,
@@ -116,10 +114,6 @@ public class PlaceBetGetHandler(
 				string.Empty,
 				cancellationToken
 				).ConfigureAwait(false);
-			}
-			else
-			{
-				break;
 			}
 		}
 	}
