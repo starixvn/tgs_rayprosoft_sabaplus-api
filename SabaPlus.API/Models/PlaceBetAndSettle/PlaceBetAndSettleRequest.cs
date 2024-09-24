@@ -32,4 +32,6 @@ public class PlaceBetAndSettleDataSet
 	public string SettleDateWithTz { get; set; }
 
 	public string? BetChoice { get; set; }
+
+	public Dictionary<string, string>? OtherBetInfo { get; set; }
 }

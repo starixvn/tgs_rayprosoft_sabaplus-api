@@ -62,6 +62,13 @@ public class PlaceBetAndSettleHandler(
 		{
 			return ErrorMapper.ParameterIncorrect;
 		}
+		var bet = bets.First();
+
+		if (IsFreeBet(bet))
+		{
+			return ErrorMapper.Success;
+		}
+
 		var gameProviderCode = request.Payload.GameProviderCode;
 		var playerInfo = await playerRepository.GetPlayerInfoByPlayerCodeAsync(request.Payload.OperatorCustId.ToPlayerCode(), gameProviderCode);
 		if (playerInfo == null)
@@ -73,13 +80,23 @@ public class PlaceBetAndSettleHandler(
 		var brandBetLimit = await playerRepository.GetBrandBetLimitAsync(playerInfo.BrandId, playerInfo.CurrencyCode);
 		var minBet = Math.Max(gameProviderBetLimit!.MinBet, brandBetLimit!.MinBet);
 		var maxBet = Math.Min(gameProviderBetLimit.MaxBet, brandBetLimit.MaxBet);
-		var bet = bets.First();
 
-		if ((bet.ActualStake < minBet || bet.ActualStake > maxBet))
+		if (bet.ActualStake < minBet || bet.ActualStake > maxBet)
 		{
 			return ErrorMapper.PlayerExceededGameLimit;
 		}
 		return ErrorMapper.Success;
+	}
+
+	private bool IsFreeBet(PlaceBetAndSettleDataSet bet)
+	{
+		var freeBetKey = "FreeBet";
+		var freeSpinKey = "FreeSpin";
+		if (bet.ActualStake == 0 && bet.OtherBetInfo != null && (bet.OtherBetInfo.ContainsKey(freeBetKey) || bet.OtherBetInfo.ContainsKey(freeSpinKey)))
+		{
+			return bet.OtherBetInfo[freeBetKey] == "True" || bet.OtherBetInfo[freeSpinKey] == "True";
+		}
+		return false;
 	}
 
 	private async Task<PlaceBetAndSettleResult> ProcessBetAsync(

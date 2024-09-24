@@ -16,5 +16,5 @@ public class VoidGameCriteria
 	public string? TransactionId { get; set; }
 	public DateTime TransDate { get; set; }
 	public DateTime SettleDate => TransDate;
-	public int Status { get; set; }
+	public int ProviderTicketStatus { get; set; }
 }

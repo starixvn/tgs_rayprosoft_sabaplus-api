@@ -32,6 +32,7 @@ public class MappingProfile : Profile
 				.ForMember(dest => dest.ExternalGameId, opt => opt.MapFrom(src => src.GameId))
 				.ForMember(dest => dest.SettleDate, opt => opt.MapFrom(src => DateTime.Parse(src.SettleDate, null, DateTimeStyles.RoundtripKind).ToUniversalTime().AddHours(4)));
 		CreateMap<VoidGameRequestDataSet, VoidGameCriteria>()
-				.ForMember(dest => dest.ExternalGameId, opt => opt.MapFrom(src => src.GameId));
+				.ForMember(dest => dest.ExternalGameId, opt => opt.MapFrom(src => src.GameId))
+				.ForMember(dest => dest.ProviderTicketStatus, opt => opt.MapFrom(src => src.Status));
 	}
 }
