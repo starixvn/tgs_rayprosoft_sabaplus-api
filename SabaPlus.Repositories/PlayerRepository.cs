@@ -32,24 +32,10 @@ internal class PlayerRepository : IPlayerRepository
 				string sql = @"
 							SELECT p.player_code AS PlayerCode,
 								p.username AS Username,
-								gpc.game_provider_currency_code AS CurrencyCode,
-								GREATEST(bl.min_bet, gpbl.min_bet) AS MinBet,
-								LEAST(bl.max_bet, gpbl.max_bet) AS MaxBet
+								p.default_wallet_currency_code AS CurrencyCode,
+								p.brand_id AS BrandId
 							FROM dbo.players as p
-							INNER JOIN dbo.brand_bet_limits as bbl
-								ON p.brand_id = bbl.brand_id
-							INNER JOIN dbo.bet_limits as bl
-								ON bbl.bet_limit_id = bl.id
-								AND p.default_wallet_currency_code = bl.currency_code
-							INNER JOIN dbo.game_provider_currencies as gpc
-								ON gpc.currency_code = p.default_wallet_currency_code
-							INNER JOIN dbo.game_providers as gp
-								ON gp.id = gpc.game_provider_id
-							INNER JOIN dbo.game_provider_bet_limits as gpbl
-								ON gp.id = gpbl.game_provider_id
-								AND gpbl.currency_code = gpc.currency_code
 							WHERE p.player_code = @playerCode
-								AND gp.code = @gameProviderCode
 							LIMIT 1;";
 
 				var parameters = new { playerCode, gameProviderCode };
@@ -65,9 +51,33 @@ internal class PlayerRepository : IPlayerRepository
 		return playerInfo;
 	}
 
-	public async ValueTask<(decimal, decimal)> GetMinAndMaxBetAsync(string playerCode, string gameProviderCode, CancellationToken cancellationToken = default)
+	public async ValueTask<BetLimit?> GetBrandBetLimitAsync(Guid brandId, string currencyCode)
 	{
-		var playerInfo = await GetPlayerInfoByPlayerCodeAsync(playerCode, gameProviderCode, cancellationToken);
-		return (playerInfo.MinBet, playerInfo.MaxBet);
+		string key = $"BrandBetLimit:{brandId}:{currencyCode}";
+		if (!memoryCache.TryGetValue(key, out BetLimit? betLimit))
+		{
+			using (IDbConnection db = new NpgsqlConnection(connectionString))
+			{
+				string sql = @"
+							SELECT bl.min_bet AS MinBet,
+								bl.max_bet AS MaxBet
+							FROM dbo.brand_bet_limits as bbl
+							INNER JOIN dbo.bet_limits as bl
+								ON bbl.bet_limit_id = bl.id
+							WHERE bl.currency_code = @currencyCode
+								AND bbl.brand_id = @brandId
+							LIMIT 1;";
+
+				var parameters = new { brandId, currencyCode };
+				betLimit = await db.QueryFirstOrDefaultAsync<BetLimit>(sql, parameters);
+			}
+
+			if (betLimit is not null)
+			{
+				return memoryCache.Set(key, betLimit, TimeSpan.FromMinutes(cacheSettings.ExpiredTimeInMinute));
+			}
+		}
+
+		return betLimit;
 	}
 }

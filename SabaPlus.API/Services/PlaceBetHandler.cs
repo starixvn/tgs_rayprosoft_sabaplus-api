@@ -26,15 +26,16 @@ public class PlaceBetGetHandler(
 	{
 		try
 		{
-			if (!(await IsValidBetAmountAsync(request)))
+			var validBetCode = await IsValidBetAsync(request);
+			if (validBetCode != ErrorMapper.Success)
 			{
-				return ResultHelper.GenerateFailedResult<PlaceBetResult, PlaceBetResponsePayload>(ErrorMapper.PlayerExceededGameLimit, ErrorMapper.ErrorMessage[ErrorMapper.PlayerExceededGameLimit]);
+				return ResultHelper.GenerateFailedResult<PlaceBetResult, PlaceBetResponsePayload>(validBetCode, ErrorMapper.ErrorMessage[validBetCode]);
 			}
 
 			var (balanceResult, deductedTicket) = await DeductBalanceAsync(request, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
-				await RefundBalanceAsync(request, deductedTicket - 1, cancellationToken);
+				await RefundBalanceAsync(request, deductedTicket, cancellationToken);
 				return ResultHelper.GenerateFailedResult<PlaceBetResult, PlaceBetResponsePayload>(balanceResult.ErrorCode, balanceResult.ErrorMessage);
 			}
 
@@ -64,17 +65,27 @@ public class PlaceBetGetHandler(
 		}
 	}
 
-	private async ValueTask<bool> IsValidBetAmountAsync(PlaceBetRequest request)
+	private async ValueTask<int> IsValidBetAsync(PlaceBetRequest request)
 	{
-		var (minBet, maxBet) = await playerRepository.GetMinAndMaxBetAsync(request.Payload.OperatorCustId.ToPlayerCode(), request.Payload.GameProviderCode);
+		var gameProviderCode = request.Payload.GameProviderCode;
+		var playerInfo = await playerRepository.GetPlayerInfoByPlayerCodeAsync(request.Payload.OperatorCustId.ToPlayerCode(), gameProviderCode);
+		if (playerInfo == null)
+		{
+			return ErrorMapper.AccountNotExist;
+		}
+
+		var gameProviderBetLimit = await gameProviderRepository.GetBetLimitAsync(gameProviderCode, playerInfo.CurrencyCode);
+		var brandBetLimit = await playerRepository.GetBrandBetLimitAsync(playerInfo.BrandId, playerInfo.CurrencyCode);
+		var minBet = Math.Max(gameProviderBetLimit!.MinBet, brandBetLimit!.MinBet);
+		var maxBet = Math.Min(gameProviderBetLimit.MaxBet, brandBetLimit.MaxBet);
 		foreach (var bet in request.Payload.BetDataSet)
 		{
 			if (!IsFreeBet(bet) && (bet.ActualStake < minBet || bet.ActualStake > maxBet))
 			{
-				return false;
+				return ErrorMapper.PlayerExceededGameLimit;
 			}
 		}
-		return true;
+		return ErrorMapper.Success;
 	}
 
 	private async ValueTask<(BalanceResponse, int)> DeductBalanceAsync(PlaceBetRequest request, CancellationToken cancellationToken)
@@ -98,11 +109,11 @@ public class PlaceBetGetHandler(
 					cancellationToken
 					).ConfigureAwait(false);
 			}
-			deductedTicket++;
 			if (!ErrorMapper.IsSuccess(res.ErrorCode))
 			{
 				return (res, deductedTicket);
 			}
+			deductedTicket++;
 		}
 		return (res, deductedTicket);
 	}

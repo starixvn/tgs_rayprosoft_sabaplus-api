@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Security.AccessControl;
 using Dapper;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -77,5 +78,60 @@ internal class GameProviderRepository : IGameProviderRepository
 		}
 
 		return gameProviderCode;
+	}
+
+	public async Task<BetLimit?> GetBetLimitAsync(string gameProviderCode, string currencyCode)
+	{
+		string key = $"{typeof(GameProviderRepository).Namespace!.Replace(".", "-").ToLower()}:GameProviderBetLimit:{gameProviderCode}:{currencyCode}";
+		if (!memoryCache.TryGetValue(key, out BetLimit? betLimit))
+		{
+			var sql = @"SELECT gpbl.min_bet AS MinBet,
+						gpbl.max_bet AS MaxBet
+					FROM dbo.game_provider_bet_limits as gpbl
+					INNER JOIN dbo.game_providers as gp
+						ON gp.id = gpbl.game_provider_id
+					WHERE gpbl.currency_code = @currencyCode
+						AND gp.code = @gameProviderCode
+					LIMIT 1;";
+			var parameters = new { gameProviderCode, currencyCode };
+			using (IDbConnection db = new NpgsqlConnection(connectionString))
+			{
+				betLimit = await db.QueryFirstOrDefaultAsync<BetLimit>(sql, parameters);
+			}
+
+			if (betLimit is not null)
+			{
+				return memoryCache.Set(key, betLimit, TimeSpan.FromMinutes(cacheSettings.ExpiredTimeInMinute));
+			}
+		}
+
+		return betLimit;
+	}
+
+	public async Task<string?> GetCurrencyCodeAsync(string gameProviderCode, string currencyCode)
+	{
+		string key = $"{typeof(GameProviderRepository).Namespace!.Replace(".", "-").ToLower()}:GameProviderCurrencyCode:{gameProviderCode}:{currencyCode}";
+		if (!memoryCache.TryGetValue(key, out string? gameProviderCurrencyCode))
+		{
+			var sql = @"SELECT gpc.game_provider_currency_code
+					FROM dbo.game_provider_currencies as gpc
+					INNER JOIN dbo.game_providers as gp
+						ON gp.id = gpc.game_provider_id
+					WHERE gpc.currency_code = @currencyCode
+						AND gp.code = @gameProviderCode
+					LIMIT 1;";
+			var parameters = new { gameProviderCode, currencyCode };
+			using (IDbConnection db = new NpgsqlConnection(connectionString))
+			{
+				gameProviderCurrencyCode = await db.QueryFirstOrDefaultAsync<string>(sql, parameters);
+			}
+
+			if (gameProviderCurrencyCode is not null)
+			{
+				return memoryCache.Set(key, gameProviderCurrencyCode, TimeSpan.FromMinutes(cacheSettings.ExpiredTimeInMinute));
+			}
+		}
+
+		return gameProviderCurrencyCode;
 	}
 }

@@ -63,9 +63,18 @@ public class PlaceBetAndSettleHandler(
 		{
 			return ErrorMapper.ParameterIncorrect;
 		}
+		var gameProviderCode = request.Payload.GameProviderCode;
+		var playerInfo = await playerRepository.GetPlayerInfoByPlayerCodeAsync(request.Payload.OperatorCustId.ToPlayerCode(), gameProviderCode);
+		if (playerInfo == null)
+		{
+			return ErrorMapper.AccountNotExist;
+		}
 
+		var gameProviderBetLimit = await gameProviderRepository.GetBetLimitAsync(gameProviderCode, playerInfo.CurrencyCode);
+		var brandBetLimit = await playerRepository.GetBrandBetLimitAsync(playerInfo.BrandId, playerInfo.CurrencyCode);
+		var minBet = Math.Max(gameProviderBetLimit!.MinBet, brandBetLimit!.MinBet);
+		var maxBet = Math.Min(gameProviderBetLimit.MaxBet, brandBetLimit.MaxBet);
 		var bet = bets.First();
-		var (minBet, maxBet) = await playerRepository.GetMinAndMaxBetAsync(request.Payload.OperatorCustId.ToPlayerCode(), request.Payload.GameProviderCode);
 
 		if ((bet.ActualStake < minBet || bet.ActualStake > maxBet))
 		{

@@ -10,6 +10,7 @@ namespace SabaPlus.API.Services;
 
 public class GetPlayerInfoHandler(
 	IPlayerRepository playerRepository,
+	IGameProviderRepository gameProviderRepository,
 	ICashServiceClient cashClient,
 	ISentryClient sentryClient
 	) : IRequestHandler<GetPlayerInfoRequest, GetPlayerInfoResult>
@@ -34,18 +35,21 @@ public class GetPlayerInfoHandler(
 					ErrorMapper.AccountNotExist,
 					ErrorMapper.ErrorMessage[ErrorMapper.AccountNotExist]);
 			}
+			var gameProviderCurrencyCode = await gameProviderRepository.GetCurrencyCodeAsync(gameProviderCode, playerInfo.CurrencyCode);
+			var gameProviderBetLimit = await gameProviderRepository.GetBetLimitAsync(gameProviderCode, playerInfo.CurrencyCode);
+			var brandBetLimit = await playerRepository.GetBrandBetLimitAsync(playerInfo.BrandId, playerInfo.CurrencyCode);
 			var res = new GetPlayerInfoResult()
 			{
 				Payload = new GetPlayerInfoResponsePayload
 				{
 					OperatorCustId = query.Payload.OperatorCustId,
 					UserName = playerInfo.Username,
-					CurrencyISO = playerInfo.CurrencyCode,
-					Currency = playerInfo.CurrencyCode,
+					CurrencyISO = gameProviderCurrencyCode,
+					Currency = gameProviderCurrencyCode,
 					Balance = balanceResult.Balance,
 					WalletSideToken = query.Payload.WalletSideToken,
-					MinBet = playerInfo.MinBet,
-					MaxBet = playerInfo.MaxBet,
+					MinBet = Math.Max(gameProviderBetLimit.MinBet, brandBetLimit.MinBet),
+					MaxBet = Math.Min(gameProviderBetLimit.MaxBet, brandBetLimit.MaxBet),
 					// TODO: group bet
 					//BetGroup = "BetGroup"
 				}
