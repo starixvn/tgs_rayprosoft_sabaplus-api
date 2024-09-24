@@ -8,11 +8,13 @@ public record VoidGameRequestPayload(string OperatorCustId, string GameType, Voi
 
 public class VoidGameRequestDataSet
 {
+	public int Status { get; set; }
+
 	public string TicketNo { get; set; }
 
 	public string GameId { get; set; }
 
 	public string GameRoundId { get; set; }
 
-	public string TransactionId { get; set; }
+	public string? TransactionId { get; set; }
 }

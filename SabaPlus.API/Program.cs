@@ -26,7 +26,10 @@ builder.Services
 		var config = sercice.GetRequiredService<IConfiguration>();
 		options.BaseUrl = config.GetValue<Uri>("ServicesUrl:GameProvidersClientBaseUrl")!;
 	})
-	.AddMemoryCache();
+	.AddMemoryCache(options =>
+	{
+		options.ExpirationScanFrequency = TimeSpan.FromMinutes(1);
+	});
 
 var env = builder.Configuration.GetValue<string>("Env");
 builder.Services

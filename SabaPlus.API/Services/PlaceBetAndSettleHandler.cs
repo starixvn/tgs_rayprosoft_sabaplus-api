@@ -2,7 +2,6 @@
 using MediatR;
 using SabaPlus.API.Messages;
 using SabaPlus.API.Models;
-using SabaPlus.API.Models.PlaceBet;
 using SabaPlus.API.Models.PlaceBetAndSettle;
 using SabaPlus.API.Services.Shared;
 using SabaPlus.Common;

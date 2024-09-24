@@ -85,4 +85,19 @@ public static class HandleMessageMapper
 			TransactionTime = criteria.TransDate,
 		};
 	}
+
+	public static HandleBetMessage VoidGame(VoidGameCriteria criteria)
+	{
+		return new HandleBetMessage()
+		{
+			GameProviderCode = criteria.GameProviderCode,
+			GameExternalId = criteria.ExternalGameId,
+			Action = "Settle",
+			PlayerCode = criteria.OperatorCustId.ToPlayerCode(),
+			TxId = criteria.TicketNo,
+			Payout = 0,
+			WinlostDate = criteria.SettleDate,
+			ExtraStatus = ActionConstants.VoidGame,
+		};
+	}
 }
