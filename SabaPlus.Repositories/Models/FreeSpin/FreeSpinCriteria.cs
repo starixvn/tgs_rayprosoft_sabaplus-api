@@ -21,4 +21,5 @@ public class FreeSpinCriteria
 	public decimal? ActualStake { get; set; }
 	public decimal? NetStake { get; set; }
 	public decimal Payout { get; set; }
+	public string? ExtraInfo { get; set; }
 }

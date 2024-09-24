@@ -29,4 +29,6 @@ public class BonusDataSet
 	public string SettleDate { get; set; }
 
 	public string? SettleDateWithTz { get; set; }
+
+	public Dictionary<string, string>? OtherBetInfo { get; set; }
 }

@@ -21,4 +21,5 @@ public class BonusCriteria
 	public string? BonusId { get; set; }
 	public string? BoNusName { get; set; }
 	public string? PrizeName { get; set; }
+	public string? ExtraInfo { get; set; }
 }

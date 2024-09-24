@@ -22,4 +22,5 @@ public class PlaceBetAndSettleCriteria
 	public decimal NetStake { get; set; }
 	public decimal Payout { get; set; }
 	public string? BetChoice { get; set; }
+	public string? ExtraInfo { get; set; }
 }
