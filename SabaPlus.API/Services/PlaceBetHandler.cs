@@ -30,11 +30,11 @@ public class PlaceBetGetHandler(
 			{
 				return ResultHelper.GenerateFailedResult<PlaceBetResult, PlaceBetResponsePayload>(ErrorMapper.PlayerExceededGameLimit, ErrorMapper.ErrorMessage[ErrorMapper.PlayerExceededGameLimit]);
 			}
-			
+
 			var (balanceResult, deductedTicket) = await DeductBalanceAsync(request, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
-				await RefundBalanceAsync(request, deductedTicket, cancellationToken);
+				await RefundBalanceAsync(request, deductedTicket - 1, cancellationToken);
 				return ResultHelper.GenerateFailedResult<PlaceBetResult, PlaceBetResponsePayload>(balanceResult.ErrorCode, balanceResult.ErrorMessage);
 			}
 
