@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SabaPlus.API.Middlewares.Attributes;
 using SabaPlus.API.Models.Balance;
-using SabaPlus.API.Models.BetResultCheck;
 using SabaPlus.API.Models.Bonus;
 using SabaPlus.API.Models.EndGame;
 using SabaPlus.API.Models.FreeSpin;
@@ -48,8 +47,5 @@ namespace SabaPlus.API.Controllers
 		[HttpPost("Bonus")]
 		public async Task<BonusResult> BonusAsync(BonusRequest request)
 			=> await mediator.Send(request).ConfigureAwait(false);
-
-		[HttpPost("BetResultCheck")]
-		public Task<BetResultCheckResult> BetResultCheck(BetResultCheckRequest request) => mediator.Send(request);
 	}
 }
