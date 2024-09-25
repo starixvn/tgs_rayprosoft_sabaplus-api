@@ -1,6 +1,5 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using SabaPlus.API.Middlewares.Attributes;
 using SabaPlus.API.Models.Balance;
 using SabaPlus.API.Models.Bonus;
 using SabaPlus.API.Models.EndGame;
@@ -25,7 +24,6 @@ namespace SabaPlus.API.Controllers
 			=> await mediator.Send(request).ConfigureAwait(false);
 
 		[HttpPost("endgame")]
-		[ReadableBody]
 		public async Task<EndGameResult> EndGameAsync(EndGameRequest request) => await mediator.Send(request).ConfigureAwait(false);
 
 		[HttpPost("GetPlayerInfo")]

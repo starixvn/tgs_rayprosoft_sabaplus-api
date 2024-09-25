@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.AspNetCore.HttpLogging;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 using NATS.Client.Core;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -98,14 +97,6 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services
 	.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(Program).Assembly))
 	.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
-builder.Services.Configure<KestrelServerOptions>(options =>
-{
-	options.AllowSynchronousIO = true;
-});
-builder.Services.Configure<IISServerOptions>(options =>
-{
-	options.AllowSynchronousIO = true;
-});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
