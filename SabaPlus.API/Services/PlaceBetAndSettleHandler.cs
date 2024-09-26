@@ -26,6 +26,11 @@ public class PlaceBetAndSettleHandler(
 	{
 		try
 		{
+			if (string.IsNullOrEmpty(request.Payload.WalletSideToken))
+			{
+				request.Payload.GameProviderCode = await gameProviderRepository.GetGameProviderCodeByGameTypeAsync(request.Payload.GameType);
+			}
+
 			var betErrorCode = await IsValidBetAsync(request);
 			if (betErrorCode != ErrorMapper.Success)
 			{
