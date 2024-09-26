@@ -25,7 +25,7 @@ public class EndGameHandler(
 		try
 		{
 			var gameProviderCode = await gameProviderRepository.GetGameProviderCodeByGameTypeAsync(request.Payload.GameType!);
-
+			var amount = await GetTotalAmountAsync(request);
 			var criteriaList = GetEndGameCriterias(request, gameProviderCode);
 			var spResults = await SettleTransactionsAsync(criteriaList);
 			var failedSp = spResults.Find(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode!));
@@ -35,7 +35,7 @@ public class EndGameHandler(
 				return ResultHelper.GenerateFailedResult<EndGameResult, EndGameResponsePayload>(failedSp.StatusCode, failedSp.ErrMsg);
 			}
 
-			var balanceResult = await AddBalanceAsync(request, gameProviderCode, cancellationToken);
+			var balanceResult = await AddBalanceAsync(request, gameProviderCode, amount, cancellationToken);
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
 				return ResultHelper.GenerateFailedResult<EndGameResult, EndGameResponsePayload>(balanceResult.ErrorCode, balanceResult.ErrorCode);
@@ -75,25 +75,43 @@ public class EndGameHandler(
 			criteria.OperatorCustId = request.Payload.OperatorCustId;
 			criteria.GameType = request.Payload.GameType;
 			criteria.GameProviderCode = gameProviderCode;
+			criteria.Action = request.Payload.Action;
 			return criteria;
 		});
 	}
 
-	private async ValueTask<BalanceResponse> AddBalanceAsync(EndGameRequest request, string gameProviderCode, CancellationToken cancellationToken)
+	private async ValueTask<BalanceResponse> AddBalanceAsync(EndGameRequest request, string gameProviderCode, decimal amount, CancellationToken cancellationToken)
 	{
-		var amount = request.Payload.BetDataSet.Sum(data => data.Payout);
 		var refId = string.Join('@', request.Payload.BetDataSet.Select(betData => betData.TicketNo));
-
+		var playerCode = request.Payload.OperatorCustId!.ToPlayerCode();
 		if (amount > 0)
 		{
-			return await cashClient.GameProviderAddBalanceAsync(
-				request.Payload.OperatorCustId!.ToPlayerCode(),
+			if (!(await cashClient.IsExistGameProviderTransactionLogAsync(playerCode,
+				new Tgs.CashService.ProviderInfo(gameProviderCode, refId, ActionConstants.EndGame),
+				cancellationToken)))
+			{
+				return await cashClient.GameProviderAddBalanceAsync(
+				playerCode,
 				amount,
 				new Tgs.CashService.ProviderInfo(gameProviderCode!, refId, request.Seq, ActionConstants.EndGame),
 				string.Empty,
 				cancellationToken);
+			}
 		}
 		return await cashClient.GameProviderGetBalanceAsync(request.Payload.OperatorCustId!.ToPlayerCode(), cancellationToken);
+	}
+
+	private async ValueTask<decimal> GetTotalAmountAsync(EndGameRequest request)
+	{
+		var total = 0M;
+		foreach (var bet in request.Payload.BetDataSet)
+		{
+			var criteria = mapper.Map<GetAdjustStakeTicketCriteria>(bet);
+			criteria.GroupAction = "settle";
+			var amount = await gameProviderRepository.SelectFunctionAsync<GetAdjustStakeTicketCriteria, decimal>(criteria, StoreProcedureMapper.GetAdjustStakeTicketFC);
+			total += amount;
+		}
+		return total;
 	}
 
 	private async ValueTask PublishMessageAsync(IEnumerable<EndGameCriteria> criteriaList, CancellationToken cancellationToken)

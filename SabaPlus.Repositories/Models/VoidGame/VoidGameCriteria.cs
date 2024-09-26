@@ -8,7 +8,7 @@ public class VoidGameCriteria
 	public string OperatorCustId { get; set; }
 	public string PlayerCode => OperatorCustId.ToPlayerCode();
 	public string TicketNo { get; set; }
-	public string Action => ActionConstants.VoidGame;
+	public string Action { get; set; } = ActionConstants.VoidGame;
 	public string GameProviderCode { get; set; }
 	public string GameType { get; set; }
 	public string GameRoundId { get; set; }

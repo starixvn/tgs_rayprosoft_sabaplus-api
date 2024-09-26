@@ -1,10 +1,14 @@
 ﻿using MediatR;
+using SabaPlus.Common;
 
 namespace SabaPlus.API.Models.EndGame;
 
 public class EndGameRequest : GameProviderRequest<EndGameRequestPayload>, IRequest<EndGameResult>;
 
-public record EndGameRequestPayload(string OperatorCustId, string GameType, EndGameDataSet[] BetDataSet);
+public record EndGameRequestPayload(string OperatorCustId, string GameType, EndGameDataSet[] BetDataSet)
+{
+	public string Action { get; set; } = ActionConstants.EndGame;
+}
 
 public class EndGameDataSet
 {
@@ -33,4 +37,6 @@ public class EndGameDataSet
 	public string? ResultId { get; set; }
 
 	public Dictionary<string, string>? OtherBetInfo { get; set; } = null;
+
+	public int? Status { get; set; }
 }

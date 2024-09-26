@@ -6,6 +6,8 @@ public interface IGameProviderRepository
 {
 	Task<TResult> CallStoredProcedureAsync<TCriteria, TResult>(TCriteria criteria, string spName);
 
+	Task<TResult> SelectFunctionAsync<TCriteria, TResult>(TCriteria criteria, string functionName);
+
 	Task<string?> GetGameProviderCodeByGameTypeAsync(string gameType);
 
 	public Task<IEnumerable<BetResultCheckTicket>> GetRunningTicketsAsync(int diffInMinute);

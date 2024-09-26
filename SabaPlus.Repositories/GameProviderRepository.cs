@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Xml.Linq;
 using Dapper;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -24,6 +25,16 @@ internal class GameProviderRepository : IGameProviderRepository
 
 	public async Task<TResult> CallStoredProcedureAsync<TCriteria, TResult>(TCriteria criteria, string spName)
 	{
+		return await QueryAsync<TCriteria, TResult>(criteria, spName);
+	}
+
+	public async Task<TResult> SelectFunctionAsync<TCriteria, TResult>(TCriteria criteria, string functionName)
+	{
+		return await QueryAsync<TCriteria, TResult>(criteria, functionName, "SELECT");
+	}
+
+	private async Task<TResult> QueryAsync<TCriteria, TResult>(TCriteria criteria, string spName, string action = "CALL")
+	{
 		using (IDbConnection db = new NpgsqlConnection(connectionString))
 		{
 			var parameters = new DynamicParameters();
@@ -33,7 +44,7 @@ internal class GameProviderRepository : IGameProviderRepository
 				var value = property.GetValue(criteria);
 				parameters.Add(property.Name.ToLower(), value);
 			}
-			string sqlQuery = $"CALL {spName}({string.Join(", ", typeof(TCriteria).GetProperties().Select(p => $"{p.Name.ToLower()} => @{p.Name.ToLower()}"))})";
+			string sqlQuery = $"{action} {spName}({string.Join(", ", typeof(TCriteria).GetProperties().Select(p => $"{p.Name.ToLower()} => @{p.Name.ToLower()}"))})";
 
 			var result = await db.QueryFirstAsync<TResult>(sqlQuery, parameters);
 

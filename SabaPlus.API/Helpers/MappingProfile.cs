@@ -21,7 +21,8 @@ public class MappingProfile : Profile
 		CreateMap<EndGameDataSet, EndGameCriteria>()
 			.ForMember(dest => dest.ExternalGameId, opt => opt.MapFrom(src => src.GameId))
 			.ForMember(dest => dest.SettleDate, opt => opt.MapFrom(src => DateTime.Parse(src.SettleDate, null, DateTimeStyles.RoundtripKind).ToUniversalTime().AddHours(4)))
-			.ForMember(dest => dest.ExtraInfo, opt => opt.MapFrom(src => JsonConvert.SerializeObject(src.OtherBetInfo)));
+			.ForMember(dest => dest.ExtraInfo, opt => opt.MapFrom(src => JsonConvert.SerializeObject(src.OtherBetInfo)))
+			.ForMember(dest => dest.ProviderTicketStatus, opt => opt.MapFrom(src => src.Status));
 		CreateMap<PlaceBetAndSettleDataSet, PlaceBetAndSettleCriteria>()
 			.ForMember(dest => dest.ExternalGameId, opt => opt.MapFrom(src => src.GameId))
 			.ForMember(dest => dest.ExtraInfo, opt => opt.MapFrom(src => JsonConvert.SerializeObject(src.OtherBetInfo)))
@@ -37,5 +38,6 @@ public class MappingProfile : Profile
 		CreateMap<VoidGameRequestDataSet, VoidGameCriteria>()
 				.ForMember(dest => dest.ExternalGameId, opt => opt.MapFrom(src => src.GameId))
 				.ForMember(dest => dest.ProviderTicketStatus, opt => opt.MapFrom(src => src.Status));
+		CreateMap<EndGameDataSet, GetAdjustStakeTicketCriteria>();
 	}
 }

@@ -8,7 +8,7 @@ public class EndGameCriteria
 	public string OperatorCustId { get; set; }
 	public string PlayerCode => OperatorCustId.ToPlayerCode();
 	public string TicketNo { get; set; }
-	public string Action => ActionConstants.EndGame;
+	public string Action { get; set; } = ActionConstants.EndGame;
 	public string GameProviderCode { get; set; }
 	public string GameType { get; set; }
 	public string GameRoundId { get; set; }
@@ -22,4 +22,5 @@ public class EndGameCriteria
 	public string? GameResult { get; set; }
 	public string? ResultId { get; set; }
 	public string? ExtraInfo { get; set; }
+	public int? ProviderTicketStatus { get; set; }
 }

@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Net.Sockets;
+using AutoMapper;
 using MediatR;
 using SabaPlus.API.Messages;
 using SabaPlus.API.Models;
@@ -58,7 +59,7 @@ public class VoidGameHandler(
 		string gameProviderCode,
 		CancellationToken cancellationToken)
 	{
-		var amount = await GetAmountFromTicketsAsync(request, ticket);
+		var amount = await GetAdjustStakeTicketAsync(ticket.TicketNo);
 		var criteria = GetCriteria(request, ticket, gameProviderCode);
 		var sp = await VoidTicketsAsync(criteria);
 		if (!ErrorMapper.IsSuccess(sp.StatusCode))
@@ -66,7 +67,7 @@ public class VoidGameHandler(
 			sentryClient.CaptureException(new Exception($"{sp.StatusCode} - {sp.ErrMsg}"));
 			return (ErrorMapper.GetErrorCode(sp.StatusCode), null);
 		}
-		var balanceResult = await AdjustBalanceAsync(request, amount, ticket.TicketNo, gameProviderCode, cancellationToken);
+		var balanceResult = await AdjustBalanceAsync(request, ticket.TicketNo, gameProviderCode, amount, cancellationToken);
 		if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 		{
 			sentryClient.CaptureException(new Exception($"{balanceResult.ErrorCode} - {balanceResult.ErrorMessage}"));
@@ -78,13 +79,13 @@ public class VoidGameHandler(
 
 	private async Task<BalanceResponse> AdjustBalanceAsync(
 		VoidGameRequest request,
-		decimal amount,
 		string ticketNo,
 		string gameProviderCode,
+		decimal amount,
 		CancellationToken cancellationToken)
 	{
 		var playerCode = request.Payload.OperatorCustId.ToPlayerCode();
-		if (await cashClient.IsExistGameProviderTransactionLogAsync(
+		if (amount == 0 || await cashClient.IsExistGameProviderTransactionLogAsync(
 			playerCode,
 			new Tgs.CashService.ProviderInfo(gameProviderCode, ticketNo, ActionConstants.VoidGame),
 			cancellationToken))
@@ -100,12 +101,14 @@ public class VoidGameHandler(
 			cancellationToken);
 	}
 
-	private async Task<decimal> GetAmountFromTicketsAsync(VoidGameRequest request, VoidGameRequestDataSet ticket)
+	private async Task<decimal> GetAdjustStakeTicketAsync(string ticketNo)
 	{
-		// TODO: correct function
-		//var criteria = new GetAmountVoidGameCriteria();
-		//return await gameProviderRepository.CallStoredProcedureAsync<GetAmountVoidGameCriteria, decimal>(criteria, StoreProcedureMapper.GetTicketAmountSP);
-		return 1;
+		var criteria = new GetAdjustStakeTicketCriteria()
+		{
+			TicketNo = ticketNo,
+			GroupAction = "void"
+		};
+		return await gameProviderRepository.SelectFunctionAsync<GetAdjustStakeTicketCriteria, decimal?>(criteria, StoreProcedureMapper.GetAdjustStakeTicketFC) ?? 0;
 	}
 
 	private async Task<SPResult> VoidTicketsAsync(VoidGameCriteria criteria)
@@ -121,6 +124,7 @@ public class VoidGameHandler(
 		criteria.GameType = request.Payload.GameType;
 		criteria.GameProviderCode = gameProviderCode;
 		criteria.TransDate = DateTime.Parse(request.TimeStamp).ToUniversalTime();
+		criteria.Action = request.Payload.Action;
 		return criteria;
 	}
 
