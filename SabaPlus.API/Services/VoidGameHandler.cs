@@ -95,7 +95,7 @@ public class VoidGameHandler(
 		return await cashClient.GameProviderAdjustBalanceAsync(
 			playerCode,
 			amount > 0 ? amount : 0,
-			amount < 0 ? amount : 0,
+			amount < 0 ? -amount : 0,
 			new Tgs.CashService.ProviderInfo(gameProviderCode, ticketNo, request.Seq, ActionConstants.VoidGame),
 			string.Empty,
 			cancellationToken);
