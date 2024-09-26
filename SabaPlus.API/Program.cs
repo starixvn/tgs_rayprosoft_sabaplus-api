@@ -6,11 +6,13 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using SabaPlus.API;
 using SabaPlus.API.Services;
+using SabaPlus.API.Services.Shared;
 using SabaPlus.Core.DependencyInjection;
 using Tgs.GameRecord.Saba.Common;
 using Tgs.MessageQueue.Nats.Serializers;
 
 var builder = WebApplication.CreateBuilder(args);
+
 // Add services to the container.
 builder.Services
 	.AddSabaPlusApiCore()
@@ -92,6 +94,9 @@ builder.Services
 	.AddProfileViewer()
 	.AddInterceptionService()
 	.AddServiceUtiltiyInterceptors();
+
+
+ResultHelper.Initialize(builder.Configuration);
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services
