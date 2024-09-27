@@ -10,4 +10,5 @@ public static class ActionConstants
 	public static readonly string FreeSpin = "FreeSpin";
 	public static readonly string Bonus = "Bonus";
 	public static readonly string VoidGame = "VoidGame";
+	public static readonly string BetResultCheck = "BetResultCheck";
 }

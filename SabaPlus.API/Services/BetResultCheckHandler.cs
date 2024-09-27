@@ -1,8 +1,8 @@
-﻿using System.Net.Sockets;
-using MediatR;
+﻿using MediatR;
 using SabaPlus.API.Models.BetResultCheck;
 using SabaPlus.API.Models.EndGame;
 using SabaPlus.API.Models.VoidGame;
+using SabaPlus.Common;
 using SabaPlus.Core;
 using SabaPlus.Core.Models;
 using Tgs.GameProviders.Client;
@@ -82,7 +82,10 @@ public class BetResultCheckHandler(
 			SettleDate = data.Result.SettleDate,
 			OtherBetInfo = data.Result.OtherBetInfo,
 		}];
-		var payload = new EndGameRequestPayload(data.Result.OperatorCustId, data.Query.Configuration.GameType, dataSet);
+		var payload = new EndGameRequestPayload(data.Result.OperatorCustId, data.Query.Configuration.GameType, dataSet)
+		{
+			Action = ActionConstants.BetResultCheck
+		};
 		var request = new EndGameRequest
 		{
 			Payload = payload,
@@ -102,7 +105,10 @@ public class BetResultCheckHandler(
 			GameRoundId = data.Result.GameRoundId,
 			TransactionId = data.Result.TransactionId,
 		}];
-		var payload = new VoidGameRequestPayload(data.Result.OperatorCustId, data.Query.Configuration.GameType, dataSet);
+		var payload = new VoidGameRequestPayload(data.Result.OperatorCustId, data.Query.Configuration.GameType, dataSet)
+		{
+			Action = ActionConstants.BetResultCheck
+		};
 		var request = new VoidGameRequest
 		{
 			Payload = payload,

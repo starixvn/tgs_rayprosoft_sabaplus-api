@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+	<PropertyGroup>
+		<Version>1.0.0</Version>
+		<Authors>S1</Authors>
+		<PackageProjectUrl>https://git3.nexdev.net/tgs/rayprosoft/sabaplus-api</PackageProjectUrl>
+		<RepositoryUrl>https://git3.nexdev.net/tgs/rayprosoft/sabaplus-api.git</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<RootNamespace>SabaPlus.Client</RootNamespace>
+		<PackageId>SabaPlus.Client</PackageId>
+		<Title>SabaPlus.Client</Title>
+		<Description>SabaPlus.Client</Description>
+		<PackageTags>SabaPlus Client</PackageTags>
+	</PropertyGroup>
+	
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

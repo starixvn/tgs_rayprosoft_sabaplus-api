@@ -1,4 +1,16 @@
 include:
   - project: ci/core-cicd
     ref: main
-    file: nexcel.gitlab-ci.yml
+    file: luminet.gitlab-ci.yml
+
+variables:
+  PUBLISH_NUGET: "true"
+
+publish_nuget:
+  parallel:
+    matrix:
+      - PROJECT_FOLDER:
+          - SabaPlus.Client
+
+sonar_dotnet:
+  allow_failure: true
