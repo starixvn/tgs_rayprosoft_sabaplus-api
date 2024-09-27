@@ -5,7 +5,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class ServiceCollectionExtensions
 {
-	public static IServiceCollection AddGameInterfaceSabaPlusClient(
+	public static IServiceCollection AddSabaPlusClient(
 		this IServiceCollection services,
 		Action<SabaPlusClientOptions, IServiceProvider> configure)
 		 => services
