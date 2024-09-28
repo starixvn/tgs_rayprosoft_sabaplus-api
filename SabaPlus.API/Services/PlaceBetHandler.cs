@@ -68,7 +68,7 @@ public class PlaceBetGetHandler(
 	private async ValueTask<int> IsValidBetAsync(PlaceBetRequest request)
 	{
 		var gameProviderCode = request.Payload.GameProviderCode;
-		var playerInfo = await playerRepository.GetPlayerInfoByPlayerCodeAsync(request.Payload.OperatorCustId.ToPlayerCode(), gameProviderCode);
+		var playerInfo = await playerRepository.GetPlayerInfoByPlayerCodeAsync(request.Payload.OperatorCustId.ToPlayerCode());
 		if (playerInfo == null)
 		{
 			return ErrorMapper.AccountNotExist;

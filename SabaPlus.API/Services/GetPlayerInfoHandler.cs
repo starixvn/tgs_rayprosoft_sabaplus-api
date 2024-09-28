@@ -28,7 +28,7 @@ public class GetPlayerInfoHandler(
 			}
 
 			var gameProviderCode = query.Payload.WalletSideToken.Split('@')[0];
-			var playerInfo = await playerRepository.GetPlayerInfoByPlayerCodeAsync(playerCode, gameProviderCode, cancellationToken).ConfigureAwait(false);
+			var playerInfo = await playerRepository.GetPlayerInfoByPlayerCodeAsync(playerCode, cancellationToken).ConfigureAwait(false);
 			if (playerInfo == null)
 			{
 				return ResultHelper.GenerateFailedResult<GetPlayerInfoResult, GetPlayerInfoResponsePayload>(

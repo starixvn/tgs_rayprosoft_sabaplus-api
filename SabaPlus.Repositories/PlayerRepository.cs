@@ -22,24 +22,16 @@ internal class PlayerRepository : IPlayerRepository
 		this.cacheSettings = cacheSettings.Value;
 	}
 
-	public async ValueTask<PlayerInfo?> GetPlayerInfoByPlayerCodeAsync(string playerCode, string gameProviderCode, CancellationToken cancellationToken = default)
+	public async ValueTask<PlayerInfo?> GetPlayerInfoByPlayerCodeAsync(string playerCode, CancellationToken cancellationToken = default)
 	{
-		string key = $"PlayerInfo:{playerCode}:{gameProviderCode}";
+		string key = $"PlayerInfo:{playerCode}";
 		if (!memoryCache.TryGetValue(key, out PlayerInfo? playerInfo))
 		{
 			using (IDbConnection db = new NpgsqlConnection(connectionString))
 			{
-				string sql = @"
-							SELECT p.player_code AS PlayerCode,
-								p.username AS Username,
-								p.default_wallet_currency_code AS CurrencyCode,
-								p.brand_id AS BrandId
-							FROM dbo.players as p
-							WHERE p.player_code = @playerCode
-							LIMIT 1;";
-
-				var parameters = new { playerCode, gameProviderCode };
-				playerInfo = await db.QueryFirstOrDefaultAsync<PlayerInfo>(sql, parameters);
+				playerInfo = await db.QueryFirstOrDefaultAsync<PlayerInfo>(
+					"SELECT * FROM dbo.sabaplus_player_get_player_info(@playerCode)",
+					 new { playerCode });
 			}
 
 			if (playerInfo is not null)
@@ -58,18 +50,9 @@ internal class PlayerRepository : IPlayerRepository
 		{
 			using (IDbConnection db = new NpgsqlConnection(connectionString))
 			{
-				string sql = @"
-							SELECT bl.min_bet AS MinBet,
-								bl.max_bet AS MaxBet
-							FROM dbo.brand_bet_limits as bbl
-							INNER JOIN dbo.bet_limits as bl
-								ON bbl.bet_limit_id = bl.id
-							WHERE bl.currency_code = @currencyCode
-								AND bbl.brand_id = @brandId
-							LIMIT 1;";
-
-				var parameters = new { brandId, currencyCode };
-				betLimit = await db.QueryFirstOrDefaultAsync<BetLimit>(sql, parameters);
+				betLimit = await db.QueryFirstOrDefaultAsync<BetLimit>(
+					"SELECT * FROM dbo.brand_get_bet_limit_by_currency(@brandId, @currencyCode)",
+					new { brandId, currencyCode });
 			}
 
 			if (betLimit is not null)

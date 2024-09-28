@@ -75,7 +75,7 @@ public class PlaceBetAndSettleHandler(
 		}
 
 		var gameProviderCode = request.Payload.GameProviderCode;
-		var playerInfo = await playerRepository.GetPlayerInfoByPlayerCodeAsync(request.Payload.OperatorCustId.ToPlayerCode(), gameProviderCode);
+		var playerInfo = await playerRepository.GetPlayerInfoByPlayerCodeAsync(request.Payload.OperatorCustId.ToPlayerCode());
 		if (playerInfo == null)
 		{
 			return ErrorMapper.AccountNotExist;
