@@ -45,6 +45,8 @@ public class BetResultCheckHandler(
 				ticket.PlayerCode)
 				.ConfigureAwait(false);
 
+			ValidateTicket(result, ticket);
+
 			switch (result.Result.Status)
 			{
 				case 1:
@@ -119,5 +121,13 @@ public class BetResultCheckHandler(
 		};
 
 		_ = await mediator.Send(request);
+	}
+
+	private static void ValidateTicket(BetResultCheckFromProvider data, BetResultCheckTicket ticket)
+	{
+		if (!string.Equals(data.Result.TicketNo, ticket.TicketNo))
+		{
+			throw new Exception($"The TicketNo is not match: {ticket.TicketNo} != {data.Result.TicketNo}");
+		}
 	}
 }
