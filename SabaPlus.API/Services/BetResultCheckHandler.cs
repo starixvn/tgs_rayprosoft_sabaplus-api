@@ -81,6 +81,7 @@ public class BetResultCheckHandler(
 			GameResult = data.Result.GameResult,
 			SettleDate = data.Result.SettleDate,
 			OtherBetInfo = data.Result.OtherBetInfo,
+			Status = data.Result.Status,
 		}];
 		var payload = new EndGameRequestPayload(data.Result.OperatorCustId, data.Query.Configuration.GameType, dataSet)
 		{
@@ -104,6 +105,7 @@ public class BetResultCheckHandler(
 			GameId = ticket.ExternalGameId,
 			GameRoundId = data.Result.GameRoundId,
 			TransactionId = data.Result.TransactionId,
+			Status = data.Result.Status,
 		}];
 		var payload = new VoidGameRequestPayload(data.Result.OperatorCustId, data.Query.Configuration.GameType, dataSet)
 		{
