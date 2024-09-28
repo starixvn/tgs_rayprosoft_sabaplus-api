@@ -7,7 +7,7 @@
   </PropertyGroup>
 
 	<PropertyGroup>
-		<Version>1.0.2</Version>
+		<Version>1.0.3</Version>
 		<Authors>S1</Authors>
 		<PackageProjectUrl>https://git3.nexdev.net/tgs/rayprosoft/sabaplus-api</PackageProjectUrl>
 		<RepositoryUrl>https://git3.nexdev.net/tgs/rayprosoft/sabaplus-api.git</RepositoryUrl>

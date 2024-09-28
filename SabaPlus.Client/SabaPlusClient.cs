@@ -5,7 +5,7 @@ namespace SabaPlus.Client;
 
 internal class SabaPlusClient(HttpClient client) : ISabaPlusClient
 {
-	private static readonly string _BetResultCheck = "/api/bet/ResultCheck";
+	private static readonly string _BetResultCheck = "/api/bet/ResultCheckSchdedule";
 
 	private static readonly JsonSerializerOptions? _SerializerOptions = new()
 	{
