@@ -122,9 +122,11 @@ public class PlaceBetGetHandler(
 	{
 		var freeBetKey = "FreeBet";
 		var freeSpinKey = "FreeSpin";
-		if (bet.ActualStake == 0 && bet.OtherBetInfo != null && (bet.OtherBetInfo.ContainsKey(freeBetKey) || bet.OtherBetInfo.ContainsKey(freeSpinKey)))
+		if (bet.ActualStake == 0 && bet.OtherBetInfo != null)
 		{
-			return bet.OtherBetInfo[freeBetKey] == "True" || bet.OtherBetInfo[freeSpinKey] == "True";
+			var isFreeBet = bet.OtherBetInfo.ContainsKey(freeBetKey) && bet.OtherBetInfo[freeBetKey].ToLowerInvariant() == "true";
+			var isFreeSpin = bet.OtherBetInfo.ContainsKey(freeSpinKey) && bet.OtherBetInfo[freeSpinKey].ToLowerInvariant() == "true";
+			return isFreeBet || isFreeSpin;
 		}
 		return false;
 	}

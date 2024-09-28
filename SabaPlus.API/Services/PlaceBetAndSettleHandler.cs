@@ -99,8 +99,8 @@ public class PlaceBetAndSettleHandler(
 		var freeSpinKey = "FreeSpin";
 		if (bet.ActualStake == 0 && bet.OtherBetInfo != null)
 		{
-			var isFreeBet = bet.OtherBetInfo.ContainsKey(freeBetKey) && bet.OtherBetInfo[freeBetKey] == "true";
-			var isFreeSpin = bet.OtherBetInfo.ContainsKey(freeSpinKey) && bet.OtherBetInfo[freeSpinKey] == "true";
+			var isFreeBet = bet.OtherBetInfo.ContainsKey(freeBetKey) && bet.OtherBetInfo[freeBetKey].ToLowerInvariant() == "true";
+			var isFreeSpin = bet.OtherBetInfo.ContainsKey(freeSpinKey) && bet.OtherBetInfo[freeSpinKey].ToLowerInvariant() == "true";
 
 			return isFreeBet || isFreeSpin;
 		}
@@ -118,7 +118,9 @@ public class PlaceBetAndSettleHandler(
 		var refId = bet.TicketNo;
 		var playerCode = request.Payload.OperatorCustId.ToPlayerCode();
 
-		if (adjustAmount < 0)
+		var isExistTicket = await IsExistTicketAsync(request);
+
+		if (!isExistTicket && adjustAmount < 0)
 		{
 			balanceResponse = await cashServiceClient.GameProviderDeductBalanceAsync(
 				playerCode,
@@ -135,7 +137,7 @@ public class PlaceBetAndSettleHandler(
 		var (criteria, spResult) = await InsertBetTransAsync(request, bet);
 		var isFailedSp = !ErrorMapper.IsSuccess(spResult?.StatusCode ?? "0");
 
-		if (IsAddBalance(adjustAmount, isFailedSp))
+		if (!isExistTicket && IsAddBalance(adjustAmount, isFailedSp))
 		{
 			var action = isFailedSp ? ActionConstants.PlaceBetAndSettleFail : ActionConstants.PlaceBetAndSettle;
 
@@ -161,6 +163,12 @@ public class PlaceBetAndSettleHandler(
 		await messagePublisher.HandleBetAsync(HandleMessageMapper.PlaceBetAndSettle(criteria, spResult?.RefNo ?? 0), cancellationToken);
 
 		return GenerateSuccessResult(request, bet, spResult, balance);
+	}
+
+	private async Task<bool> IsExistTicketAsync(PlaceBetAndSettleRequest request)
+	{
+		return await cashServiceClient.IsExistGameProviderTransactionLogAsync(request.Payload.OperatorCustId.ToPlayerCode(),
+			new ProviderInfo(request.Payload.GameProviderCode, request.Payload.BetDataSet.First().TicketNo, ActionConstants.PlaceBetAndSettle));
 	}
 
 	private async Task<(PlaceBetAndSettleCriteria, SPResult)> InsertBetTransAsync(PlaceBetAndSettleRequest request, PlaceBetAndSettleDataSet bet)
