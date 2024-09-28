@@ -13,9 +13,9 @@ public class BetResultCheckHandler(
 	IGameProvidersClient gameProvidersClient,
 	IGameProviderRepository gameProviderRepository,
 	IMediator mediator)
-	: IRequestHandler<BetResultCheckRequest, BetResultCheckResult>
+	: IRequestHandler<BetResultCheckScheduleRequest, BetResultCheckResult>
 {
-	public async Task<BetResultCheckResult> Handle(BetResultCheckRequest request, CancellationToken cancellationToken)
+	public async Task<BetResultCheckResult> Handle(BetResultCheckScheduleRequest request, CancellationToken cancellationToken)
 	{
 		try
 		{

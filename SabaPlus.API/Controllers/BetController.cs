@@ -9,6 +9,6 @@ namespace SabaPlus.API.Controllers;
 public class BetController(IMediator mediator) : ControllerBase
 {
 	[HttpPost("ResultCheckSchdedule")]
-	public Task<BetResultCheckResult> ResultCheckSchdeduleAsync(BetResultCheckRequest request)
+	public Task<BetResultCheckResult> ResultCheckSchdeduleAsync(BetResultCheckScheduleRequest request)
 		=> mediator.Send(request);
 }
