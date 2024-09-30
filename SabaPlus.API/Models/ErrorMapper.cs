@@ -6,11 +6,11 @@ public static class ErrorMapper
 	public const int UnspecifiedError = 1000;
 	public const int ParameterIncorrect = 1007;
 	public const int AccountNotExist = 2003;
-	public static int AlreadyProcessed = 3001;
+	public const int AlreadyProcessed = 3001;
 	public const int InsufficientFunds = 3002;
 	public const int PlayerExceededGameLimit = 3003;
 	public const int DuplicateTransaction = 3017;
-	public static int NoSuchTicket = 3016;
+	public const int NoSuchTicket = 3016;
 	public const int InvalidVendor = 1004;
 
 	private static Dictionary<string, int> InternalErrorCodes = new()
@@ -37,7 +37,7 @@ public static class ErrorMapper
 		[AlreadyProcessed] = "Already processed with different details",
 		[InsufficientFunds] = "Player has insufficient funds",
 		[PlayerExceededGameLimit] = "The player exceeded their game limit",
-		[DuplicateTransaction] = "Duplicate Transaction"
+		[DuplicateTransaction] = "Duplicate Transaction",
 		[InvalidVendor] = "The Vendor Id is invalid"
 	};
 
