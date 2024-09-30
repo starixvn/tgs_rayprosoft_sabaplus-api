@@ -38,6 +38,6 @@ public class MappingProfile : Profile
 		CreateMap<VoidGameRequestDataSet, VoidGameCriteria>()
 				.ForMember(dest => dest.ExternalGameId, opt => opt.MapFrom(src => src.GameId))
 				.ForMember(dest => dest.ProviderTicketStatus, opt => opt.MapFrom(src => src.Status));
-		CreateMap<EndGameDataSet, GetAdjustStakeTicketCriteria>();
+		CreateMap<EndGameDataSet, GetAdjustBalanceTicketCriteria>();
 	}
 }

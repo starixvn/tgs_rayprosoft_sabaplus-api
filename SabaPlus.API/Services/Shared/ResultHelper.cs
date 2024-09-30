@@ -25,9 +25,8 @@ public static class ResultHelper
 		return new TResponse { ErrorCode = errorCode };
 	}
 
-	private static SentryLevel GetSentryLevelFromConfig(string errorCode)
+	public static SentryLevel GetSentryLevelFromConfig(string errorCode)
 	{
 		return _configuration.GetSection("ErrorCodesSentryLevel").GetValue<SentryLevel?>(errorCode) ?? SentryLevel.Error;
 	}
-
 }
