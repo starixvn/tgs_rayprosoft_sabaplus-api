@@ -29,7 +29,6 @@ public class MappingProfile : Profile
 			.ForMember(dest => dest.SettleDate, opt => opt.MapFrom(src => DateTime.Parse(src.SettleDate, null, DateTimeStyles.RoundtripKind).ToUniversalTime().AddHours(4)));
 		CreateMap<FreeSpinDataSet, FreeSpinCriteria>()
 			.ForMember(dest => dest.ExternalGameId, opt => opt.MapFrom(src => src.GameId))
-			.ForMember(dest => dest.ExtraInfo, opt => opt.MapFrom(src => JsonConvert.SerializeObject(src.OtherBetInfo)))
 			.ForMember(dest => dest.SettleDate, opt => opt.MapFrom(src => DateTime.Parse(src.SettleDate, null, DateTimeStyles.RoundtripKind).ToUniversalTime().AddHours(4)));
 		CreateMap<BonusDataSet, BonusCriteria>()
 				.ForMember(dest => dest.ExternalGameId, opt => opt.MapFrom(src => src.GameId))
