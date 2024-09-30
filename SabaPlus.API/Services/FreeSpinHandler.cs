@@ -8,6 +8,7 @@ using SabaPlus.Common;
 using SabaPlus.Core;
 using SabaPlus.Repositories.Helpers;
 using SabaPlus.Repositories.Models;
+using Tgs.CashService;
 using Tgs.CashService.Client;
 
 namespace SabaPlus.API.Services;
@@ -20,90 +21,102 @@ public class FreeSpinHandler(
 	ISentryClient sentryClient
 	) : IRequestHandler<FreeSpinRequest, FreeSpinResult>
 {
-	public async Task<FreeSpinResult> Handle(FreeSpinRequest request, CancellationToken cancellationToken = default)
+	public async Task<FreeSpinResult> Handle(FreeSpinRequest request, CancellationToken cancellationToken)
 	{
 		try
 		{
+			//TODO - for security, it should check if player is playing game in our system!!!
+			// => some kind of last bet as re-checkin monitoring
+
 			var gameProviderCode = await gameProviderRepository.GetGameProviderCodeByGameTypeAsync(request.Payload.GameType);
 
-			var criteriaList = GetFreeSpinCriterias(request, gameProviderCode);
-			var spResults = await InsertTransactionsAsync(criteriaList);
-			var failedSp = spResults.Find(spResult => !ErrorMapper.IsSuccess(spResult.StatusCode!));
-			if (failedSp != default)
+			if (string.IsNullOrWhiteSpace(gameProviderCode))
 			{
-				return ResultHelper.GenerateFailedResult<FreeSpinResult, FreeSpinPayload>(failedSp.StatusCode!, failedSp.ErrMsg);
+				return ResultHelper.GenerateFailedResult<FreeSpinResult, FreeSpinPayload>(
+					ErrorMapper.InvalidVendor,
+					ErrorMapper.GetErrorMessage(ErrorMapper.InvalidVendor));
+			}
+
+			var criteria = GetFreeSpinCriteria(request, gameProviderCode);
+
+			if (criteria == null)
+			{
+				return ResultHelper.GenerateFailedResult<FreeSpinResult, FreeSpinPayload>(
+						ErrorMapper.ParameterIncorrect,
+						ErrorMapper.GetErrorMessage(ErrorMapper.ParameterIncorrect));
+			}
+
+			var spResult = await gameProviderRepository.CallStoredProcedureAsync<FreeSpinCriteria, SPResult>(
+				criteria,
+				StoreProcedureMapper.InsertSignalSP);
+
+			if (!ErrorMapper.IsSuccess(spResult.StatusCode!))
+			{
+				return ResultHelper.GenerateFailedResult<FreeSpinResult, FreeSpinPayload>(spResult.StatusCode!, spResult.ErrMsg ?? string.Empty);
 			}
 
 			var balanceResult = await AddBalanceAsync(request, gameProviderCode, cancellationToken);
+
 			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 			{
 				return ResultHelper.GenerateFailedResult<FreeSpinResult, FreeSpinPayload>(balanceResult.ErrorCode, balanceResult.ErrorMessage);
 			}
 
-			var betDataSet = spResults.Select((spResult, index) =>
-								new FreeSpinResponseDataSet { RefNo = spResult.RefNo.ToString(), TicketNo = request.Payload.BetDataSet[index].TicketNo });
-			var res = new FreeSpinResult
+			var betDataSet = new FreeSpinResponseDataSet
 			{
-				Payload = new FreeSpinPayload(request.Payload.OperatorCustId, balanceResult.Balance, betDataSet.ToArray())
+				RefNo = spResult.RefNo.ToString() ?? string.Empty,
+				TicketNo = request.Payload.BetDataSet.First().TicketNo
 			};
 
-			await PublishBetMessageAsync(criteriaList, spResults, cancellationToken);
+			var res = new FreeSpinResult
+			{
+				Payload = new FreeSpinPayload(request.Payload.OperatorCustId, balanceResult.Balance, [betDataSet])
+			};
+
+			await messagePublisher.HandleBetAsync(HandleMessageMapper.FreeSpin(criteria, spResult.RefNo ?? 0), cancellationToken);
+
 			return res;
 		}
 		catch (Exception ex)
 		{
-			sentryClient.CaptureException(ex);
+			_ = sentryClient.CaptureException(ex);
 			return new FreeSpinResult { ErrorCode = ErrorMapper.UnspecifiedError };
 		}
 	}
 
-	private async Task<List<SPResult>> InsertTransactionsAsync(IEnumerable<FreeSpinCriteria> criteriaList)
+	private FreeSpinCriteria? GetFreeSpinCriteria(FreeSpinRequest request, string gameProviderCode)
 	{
-		var result = new List<SPResult>();
-		foreach (var criteria in criteriaList)
-		{
-			var spResult = await gameProviderRepository.CallStoredProcedureAsync<FreeSpinCriteria, SPResult>(criteria, StoreProcedureMapper.InsertSignalSP);
-			result.Add(spResult);
-		}
-		return result;
-	}
+		var bet = request.Payload.BetDataSet.First();
 
-	private IEnumerable<FreeSpinCriteria> GetFreeSpinCriterias(FreeSpinRequest request, string gameProviderCode)
-	{
-		return request.Payload.BetDataSet.Select(betData =>
+		if (bet == null)
 		{
-			var criteria = mapper.Map<FreeSpinCriteria>(betData!);
-			criteria.TransDate = DateTime.Parse(request.TimeStamp).ToUniversalTime();
-			criteria.Seq = request.Seq;
-			criteria.OperatorCustId = request.Payload.OperatorCustId;
-			criteria.GameType = request.Payload.GameType;
-			criteria.IpAddress = request.Payload.IpAddress;
-			criteria.GameProviderCode = gameProviderCode;
-			return criteria;
-		});
+			return null;
+		}
+
+		var criteria = mapper.Map<FreeSpinCriteria>(bet!);
+		criteria.TransDate = DateTime.Parse(request.TimeStamp).ToUniversalTime();
+		criteria.Seq = request.Seq;
+		criteria.OperatorCustId = request.Payload.OperatorCustId;
+		criteria.GameType = request.Payload.GameType;
+		criteria.IpAddress = request.Payload.IpAddress;
+		criteria.GameProviderCode = gameProviderCode;
+
+		return criteria;
 	}
 
 	private async ValueTask<BalanceResponse> AddBalanceAsync(FreeSpinRequest request, string gameProviderCode, CancellationToken cancellationToken)
 	{
-		var amount = request.Payload.BetDataSet.Sum(data => data.Payout);
+		var bet = request.Payload.BetDataSet.First();
+		var amount = bet.Payout;
 		var refId = string.Join('@', request.Payload.BetDataSet.Select(data => data.TicketNo));
-		if (amount > 0)
-		{
-			return await cashClient.GameProviderAddBalanceAsync(
-				request.Payload.OperatorCustId!.ToPlayerCode(),
-				amount,
-				new Tgs.CashService.ProviderInfo(gameProviderCode!, refId, request.Seq, ActionConstants.EndGame),
-				string.Empty,
-				cancellationToken);
-		}
-		return await cashClient.GameProviderGetBalanceAsync(request.Payload.OperatorCustId!.ToPlayerCode(), cancellationToken);
-	}
+		var playerCode = request.Payload.OperatorCustId!.ToPlayerCode();
 
-	private async ValueTask PublishBetMessageAsync(IEnumerable<FreeSpinCriteria> criteriaList, List<SPResult> spResults, CancellationToken cancellationToken)
-	{
-		foreach (var item in criteriaList.Select((criteria, i) => (criteria, i)))
-		{
-			await messagePublisher.HandleBetAsync(HandleMessageMapper.FreeSpin(item.criteria, spResults[item.i].RefNo!.Value), cancellationToken);
-		}
+		return amount > 0
+			? await cashClient.GameProviderAddBalanceAsync(
+				playerCode,
+				amount,
+				new ProviderInfo(gameProviderCode!, refId, request.Seq, ActionConstants.EndGame),
+				cancellationToken: cancellationToken)
+			: await cashClient.GameProviderGetBalanceAsync(playerCode, cancellationToken);
 	}
 }
