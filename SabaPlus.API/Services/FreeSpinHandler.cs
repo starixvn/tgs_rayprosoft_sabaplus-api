@@ -37,43 +37,16 @@ public class FreeSpinHandler(
 					ErrorMapper.GetErrorMessage(ErrorMapper.InvalidVendor));
 			}
 
-			var criteria = GetFreeSpinCriteria(request, gameProviderCode);
+			FreeSpinCriteria? criteria;
+			FreeSpinResult res;
+			long refNo;
 
-			if (criteria == null)
+			(criteria, res, refNo) = await ProcessFreeSpinAsync(request, gameProviderCode, cancellationToken);
+
+			if (criteria != null)
 			{
-				return ResultHelper.GenerateFailedResult<FreeSpinResult, FreeSpinPayload>(
-						ErrorMapper.ParameterIncorrect,
-						ErrorMapper.GetErrorMessage(ErrorMapper.ParameterIncorrect));
+				await messagePublisher.HandleBetAsync(HandleMessageMapper.FreeSpin(criteria, refNo), cancellationToken);
 			}
-
-			var spResult = await gameProviderRepository.CallStoredProcedureAsync<FreeSpinCriteria, SPResult>(
-				criteria,
-				StoreProcedureMapper.InsertSignalSP);
-
-			if (!ErrorMapper.IsSuccess(spResult.StatusCode!))
-			{
-				return ResultHelper.GenerateFailedResult<FreeSpinResult, FreeSpinPayload>(spResult.StatusCode!, spResult.ErrMsg ?? string.Empty);
-			}
-
-			var balanceResult = await AddBalanceAsync(request, gameProviderCode, cancellationToken);
-
-			if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
-			{
-				return ResultHelper.GenerateFailedResult<FreeSpinResult, FreeSpinPayload>(balanceResult.ErrorCode, balanceResult.ErrorMessage);
-			}
-
-			var betDataSet = new FreeSpinResponseDataSet
-			{
-				RefNo = spResult.RefNo.ToString() ?? string.Empty,
-				TicketNo = request.Payload.BetDataSet.First().TicketNo
-			};
-
-			var res = new FreeSpinResult
-			{
-				Payload = new FreeSpinPayload(request.Payload.OperatorCustId, balanceResult.Balance, [betDataSet])
-			};
-
-			await messagePublisher.HandleBetAsync(HandleMessageMapper.FreeSpin(criteria, spResult.RefNo ?? 0), cancellationToken);
 
 			return res;
 		}
@@ -82,6 +55,55 @@ public class FreeSpinHandler(
 			_ = sentryClient.CaptureException(ex);
 			return new FreeSpinResult { ErrorCode = ErrorMapper.UnspecifiedError };
 		}
+	}
+
+	private async Task<(FreeSpinCriteria?, FreeSpinResult, long refNo)> ProcessFreeSpinAsync(FreeSpinRequest request, string gameProviderCode, CancellationToken cancellationToken)
+	{
+		var criteria = GetFreeSpinCriteria(request, gameProviderCode);
+
+		if (criteria == null)
+		{
+			return (criteria,
+				ResultHelper.GenerateFailedResult<FreeSpinResult, FreeSpinPayload>(
+					ErrorMapper.ParameterIncorrect,
+					ErrorMapper.GetErrorMessage(ErrorMapper.ParameterIncorrect)),
+				0);
+		}
+
+		var spResult = await gameProviderRepository.CallStoredProcedureAsync<FreeSpinCriteria, SPResult>(
+			criteria,
+			StoreProcedureMapper.InsertSignalSP);
+
+		if (!ErrorMapper.IsSuccess(spResult.StatusCode!))
+		{
+			return (
+				criteria,
+				ResultHelper.GenerateFailedResult<FreeSpinResult, FreeSpinPayload>(spResult.StatusCode!, spResult.ErrMsg ?? string.Empty),
+				0);
+		}
+
+		var balanceResult = await AddBalanceAsync(request, gameProviderCode, cancellationToken);
+
+		if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
+		{
+			return (
+				criteria,
+				ResultHelper.GenerateFailedResult<FreeSpinResult, FreeSpinPayload>(balanceResult.ErrorCode, balanceResult.ErrorMessage),
+				0);
+		}
+
+		var betDataSet = new FreeSpinResponseDataSet
+		{
+			RefNo = spResult.RefNo.ToString() ?? string.Empty,
+			TicketNo = request.Payload.BetDataSet.First().TicketNo
+		};
+
+		var res = new FreeSpinResult
+		{
+			Payload = new FreeSpinPayload(request.Payload.OperatorCustId, balanceResult.Balance, [betDataSet])
+		};
+
+		return (criteria, res, spResult.RefNo ?? 0);
 	}
 
 	private FreeSpinCriteria? GetFreeSpinCriteria(FreeSpinRequest request, string gameProviderCode)
