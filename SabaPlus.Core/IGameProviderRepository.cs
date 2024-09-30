@@ -10,7 +10,7 @@ public interface IGameProviderRepository
 
 	Task<string?> GetGameProviderCodeByGameTypeAsync(string gameType);
 
-	public Task<IEnumerable<BetResultCheckTicket>> GetRunningTicketsAsync(int diffInMinute);
+	public Task<IEnumerable<BetResultCheckTicket>> GetRunningTicketsAsync(int diffInMinute, bool isTest = false);
 
 	Task<BetLimit?> GetBetLimitAsync(string gameProviderCode, string currencyCode);
 

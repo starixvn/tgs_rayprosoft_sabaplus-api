@@ -12,16 +12,18 @@ namespace SabaPlus.API.Services;
 public class BetResultCheckHandler(
 	IGameProvidersClient gameProvidersClient,
 	IGameProviderRepository gameProviderRepository,
-	IMediator mediator)
+	IMediator mediator,
+	IConfiguration configuration)
 	: IRequestHandler<BetResultCheckScheduleRequest, BetResultCheckResult>
 {
 	public async Task<BetResultCheckResult> Handle(BetResultCheckScheduleRequest request, CancellationToken cancellationToken)
 	{
+		var isTest = !string.Equals(configuration.GetValue<string>("Env"), "PROD", StringComparison.OrdinalIgnoreCase);
 		var result = new BetResultCheckResult();
 
 		try
 		{
-			var tickets = await gameProviderRepository.GetRunningTicketsAsync(request.DiffInMinute).ConfigureAwait(false);
+			var tickets = await gameProviderRepository.GetRunningTicketsAsync(request.DiffInMinute, isTest).ConfigureAwait(false);
 
 			foreach (var ticket in tickets)
 			{

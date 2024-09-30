@@ -51,11 +51,11 @@ internal class GameProviderRepository : IGameProviderRepository
 		}
 	}
 
-	public async Task<IEnumerable<BetResultCheckTicket>> GetRunningTicketsAsync(int diffInMinute)
+	public async Task<IEnumerable<BetResultCheckTicket>> GetRunningTicketsAsync(int diffInMinute, bool isTest = false)
 	{
 		using (IDbConnection db = new NpgsqlConnection(connectionString))
 		{
-			string sqlQuery = $"select * from dbo.bet_bettrans_sabaplus_running_get(diff => {diffInMinute})";
+			string sqlQuery = $"select * from dbo.bet_bettrans_sabaplus_running_get(diff => {diffInMinute}, istest => {isTest.GetHashCode()}::bit)";
 			var result = await db.QueryAsync<BetResultCheckTicket>(sqlQuery);
 
 			return result;
