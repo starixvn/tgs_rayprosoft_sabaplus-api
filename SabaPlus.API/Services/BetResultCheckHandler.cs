@@ -17,13 +17,17 @@ public class BetResultCheckHandler(
 {
 	public async Task<BetResultCheckResult> Handle(BetResultCheckScheduleRequest request, CancellationToken cancellationToken)
 	{
+		var result = new BetResultCheckResult();
+
 		try
 		{
 			var tickets = await gameProviderRepository.GetRunningTicketsAsync(request.DiffInMinute).ConfigureAwait(false);
 
 			foreach (var ticket in tickets)
 			{
-				await HandleEachTicketAsync(ticket);
+				var value = await HandleEachTicketAsync(ticket);
+
+				result.Tickets.Add(value);
 			}
 		}
 		catch (Exception ex)
@@ -31,10 +35,10 @@ public class BetResultCheckHandler(
 			_ = SentrySdk.CaptureException(ex);
 		}
 
-		return new BetResultCheckResult();
+		return result;
 	}
 
-	public async Task HandleEachTicketAsync(BetResultCheckTicket ticket)
+	public async ValueTask<BetResultCheckTicketResult> HandleEachTicketAsync(BetResultCheckTicket ticket)
 	{
 		try
 		{
@@ -61,10 +65,24 @@ public class BetResultCheckHandler(
 					await HandleVoidAsync(result, ticket);
 					break;
 			}
+
+			return new BetResultCheckTicketResult
+			{
+				GameProviderCode = ticket.GameProviderCode,
+				TicketNo = ticket.TicketNo,
+				Success = true
+			};
 		}
 		catch (Exception ex)
 		{
 			_ = SentrySdk.CaptureException(ex);
+
+			return new BetResultCheckTicketResult
+			{
+				GameProviderCode = ticket.GameProviderCode,
+				TicketNo = ticket.TicketNo,
+				Success = false
+			};
 		}
 	}
 
