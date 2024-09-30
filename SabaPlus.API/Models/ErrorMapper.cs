@@ -2,17 +2,18 @@
 
 public static class ErrorMapper
 {
-	public static int Success = 0;
-	public static int UnspecifiedError = 1000;
-	public static int ParameterIncorrect = 1007;
-	public static int AccountNotExist = 2003;
+	public const int Success = 0;
+	public const int UnspecifiedError = 1000;
+	public const int ParameterIncorrect = 1007;
+	public const int AccountNotExist = 2003;
 	public static int AlreadyProcessed = 3001;
-	public static int InsufficientFunds = 3002;
-	public static int PlayerExceededGameLimit = 3003;
+	public const int InsufficientFunds = 3002;
+	public const int PlayerExceededGameLimit = 3003;
+	public const int DuplicateTransaction = 3017;
 	public static int NoSuchTicket = 3016;
-	public static int DuplicateTransaction = 3017;
+	public const int InvalidVendor = 1004;
 
-	public static Dictionary<string, int> InternalErrorCodes = new()
+	private static Dictionary<string, int> InternalErrorCodes = new()
 	{
 		["0"] = Success,
 		["101"] = DuplicateTransaction,
@@ -28,7 +29,7 @@ public static class ErrorMapper
 		["3001"] = AlreadyProcessed
 	};
 
-	public static Dictionary<int, string> ErrorMessage = new()
+	private static Dictionary<int, string> ErrorMessage = new()
 	{
 		[UnspecifiedError] = "Unspecified Error",
 		[ParameterIncorrect] = "Parameter(s) Incorrect",
@@ -37,6 +38,7 @@ public static class ErrorMapper
 		[InsufficientFunds] = "Player has insufficient funds",
 		[PlayerExceededGameLimit] = "The player exceeded their game limit",
 		[DuplicateTransaction] = "Duplicate Transaction"
+		[InvalidVendor] = "The Vendor Id is invalid"
 	};
 
 	public static int GetErrorCode(string internalErrorCode)

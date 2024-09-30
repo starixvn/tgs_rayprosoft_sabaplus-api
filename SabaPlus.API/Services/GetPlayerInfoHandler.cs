@@ -33,7 +33,7 @@ public class GetPlayerInfoHandler(
 			{
 				return ResultHelper.GenerateFailedResult<GetPlayerInfoResult, GetPlayerInfoResponsePayload>(
 					ErrorMapper.AccountNotExist,
-					ErrorMapper.ErrorMessage[ErrorMapper.AccountNotExist]);
+					ErrorMapper.GetErrorMessage(ErrorMapper.AccountNotExist));
 			}
 			var gameProviderCurrencyCode = await gameProviderRepository.GetCurrencyCodeAsync(gameProviderCode, playerInfo.CurrencyCode);
 			var gameProviderBetLimit = await gameProviderRepository.GetBetLimitAsync(gameProviderCode, playerInfo.CurrencyCode);

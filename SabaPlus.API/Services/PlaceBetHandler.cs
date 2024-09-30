@@ -29,7 +29,7 @@ public class PlaceBetGetHandler(
 			var validBetCode = await IsValidBetAsync(request);
 			if (validBetCode != ErrorMapper.Success)
 			{
-				return ResultHelper.GenerateFailedResult<PlaceBetResult, PlaceBetResponsePayload>(validBetCode, ErrorMapper.ErrorMessage[validBetCode]);
+				return ResultHelper.GenerateFailedResult<PlaceBetResult, PlaceBetResponsePayload>(validBetCode, ErrorMapper.GetErrorMessage(validBetCode));
 			}
 
 			var (balanceResult, deductedTicket) = await DeductBalanceAsync(request, cancellationToken);
