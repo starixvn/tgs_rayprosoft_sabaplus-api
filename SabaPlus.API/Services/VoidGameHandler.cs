@@ -61,7 +61,7 @@ public class VoidGameHandler(
 		string gameProviderCode,
 		CancellationToken cancellationToken)
 	{
-		var adjustBalanceResult = await GetAdjustBalanceAsync(ticket.TicketNo, request.Payload.OperatorCustId);
+		var adjustBalanceResult = await GetAdjustBalanceAsync(ticket.TicketNo, request.Payload.OperatorCustId, request.Payload.GameType);
 		if (!ErrorMapper.IsSuccess(adjustBalanceResult.StatusCode))
 		{
 			return new BalanceResponse { Balance = 0, ErrorCode = adjustBalanceResult.StatusCode, ErrorMessage = adjustBalanceResult.ErrMsg };
@@ -108,13 +108,14 @@ public class VoidGameHandler(
 				cancellationToken);
 	}
 
-	private async Task<GetAdjustBalanceTicketSPResult?> GetAdjustBalanceAsync(string ticketNo, string operatorCustId)
+	private async Task<GetAdjustBalanceTicketSPResult?> GetAdjustBalanceAsync(string ticketNo, string operatorCustId, string gameType)
 	{
 		var criteria = new GetAdjustBalanceTicketCriteria()
 		{
 			TicketNo = ticketNo,
 			OperatorCustId = operatorCustId,
-			GroupAction = "void"
+			GroupAction = "void",
+			GameType = gameType
 		};
 		return await gameProviderRepository
 			.CallStoredProcedureAsync<GetAdjustBalanceTicketCriteria, GetAdjustBalanceTicketSPResult?>(criteria, StoreProcedureMapper.GetAdjustBalanceTicketSP)

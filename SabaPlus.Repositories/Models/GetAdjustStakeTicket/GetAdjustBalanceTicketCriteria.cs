@@ -3,6 +3,7 @@
 public class GetAdjustBalanceTicketCriteria
 {
 	public string OperatorCustId { get; set; }
+	public string GameType { get; set; }
 	public string TicketNo { get; set; }
 	public string GroupAction { get; set; }
 	public decimal? ActualStake { get; set; }

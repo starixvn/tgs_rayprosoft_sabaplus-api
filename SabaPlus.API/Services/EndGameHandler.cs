@@ -58,7 +58,7 @@ public class EndGameHandler(
 		string gameProviderCode,
 		CancellationToken cancellationToken)
 	{
-		var adjustBalanceResult = await GetAdjustBalanceAsync(ticket, request.Payload.OperatorCustId);
+		var adjustBalanceResult = await GetAdjustBalanceAsync(ticket, request.Payload.OperatorCustId, request.Payload.GameType);
 		if (!ErrorMapper.IsSuccess(adjustBalanceResult.StatusCode))
 		{
 			return new BalanceResponse { Balance = 0, ErrorCode = adjustBalanceResult.StatusCode, ErrorMessage = adjustBalanceResult.ErrMsg };
@@ -101,11 +101,12 @@ public class EndGameHandler(
 			new Tgs.CashService.ProviderInfo(gameProviderCode, ticket.TicketNo, seq, action));
 	}
 
-	private async ValueTask<GetAdjustBalanceTicketSPResult> GetAdjustBalanceAsync(EndGameDataSet ticket, string operatorCustId)
+	private async ValueTask<GetAdjustBalanceTicketSPResult> GetAdjustBalanceAsync(EndGameDataSet ticket, string operatorCustId, string gameType)
 	{
 		var criteria = mapper.Map<GetAdjustBalanceTicketCriteria>(ticket);
 		criteria.GroupAction = "settle";
 		criteria.OperatorCustId = operatorCustId;
+		criteria.GameType = gameType;
 		return await gameProviderRepository.CallStoredProcedureAsync<GetAdjustBalanceTicketCriteria, GetAdjustBalanceTicketSPResult>(criteria, StoreProcedureMapper.GetAdjustBalanceTicketSP);
 	}
 
