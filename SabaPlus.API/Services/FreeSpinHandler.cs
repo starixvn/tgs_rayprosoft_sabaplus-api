@@ -37,11 +37,7 @@ public class FreeSpinHandler(
 					ErrorMapper.GetErrorMessage(ErrorMapper.InvalidVendor));
 			}
 
-			FreeSpinCriteria? criteria;
-			FreeSpinResult res;
-			long refNo;
-
-			(criteria, res, refNo) = await ProcessFreeSpinAsync(request, gameProviderCode, cancellationToken);
+			var (criteria, res, refNo) = await ProcessFreeSpinAsync(request, gameProviderCode, cancellationToken);
 
 			if (criteria != null)
 			{
