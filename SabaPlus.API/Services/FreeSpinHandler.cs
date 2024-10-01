@@ -133,7 +133,7 @@ public class FreeSpinHandler(
 			? await cashClient.GameProviderAddBalanceAsync(
 				playerCode,
 				amount,
-				new ProviderInfo(gameProviderCode!, refId, request.Seq, ActionConstants.EndGame),
+				new ProviderInfo(gameProviderCode!, refId, request.Seq, ActionConstants.FreeSpin),
 				cancellationToken: cancellationToken)
 			: await cashClient.GameProviderGetBalanceAsync(playerCode, cancellationToken);
 	}

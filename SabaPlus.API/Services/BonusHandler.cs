@@ -94,7 +94,7 @@ public class BonusHandler(
 			return await cashClient.GameProviderAddBalanceAsync(
 				request.Payload.OperatorCustId!.ToPlayerCode(),
 				amount,
-				new Tgs.CashService.ProviderInfo(gameProviderCode!, refId, request.Seq, ActionConstants.EndGame),
+				new Tgs.CashService.ProviderInfo(gameProviderCode!, refId, request.Seq, ActionConstants.Bonus),
 			string.Empty,
 				cancellationToken);
 		}
