@@ -6,7 +6,7 @@ public class PlaceBetAndSettleRequest : GameProviderRequest<PlaceBetAndSettleReq
 
 public record PlaceBetAndSettleRequestPayload(string OperatorCustId, string WalletSideToken, string GameType, string? IpAddress, PlaceBetAndSettleDataSet[] BetDataSet)
 {
-	public string GameProviderCode { get; set; } = WalletSideToken.Split('@')[0];
+	public string GameProviderCode => WalletSideToken.Split('@')[0];
 };
 
 public class PlaceBetAndSettleDataSet

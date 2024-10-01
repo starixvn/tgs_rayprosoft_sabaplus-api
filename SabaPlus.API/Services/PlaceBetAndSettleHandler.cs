@@ -26,11 +26,6 @@ public class PlaceBetAndSettleHandler(
 	{
 		try
 		{
-			if (string.IsNullOrEmpty(request.Payload.WalletSideToken))
-			{
-				request.Payload.GameProviderCode = await gameProviderRepository.GetGameProviderCodeByGameTypeAsync(request.Payload.GameType);
-			}
-
 			var betErrorCode = await IsValidBetAsync(request);
 			if (betErrorCode != ErrorMapper.Success)
 			{
@@ -63,16 +58,11 @@ public class PlaceBetAndSettleHandler(
 	private async ValueTask<int> IsValidBetAsync(PlaceBetAndSettleRequest request)
 	{
 		var bets = request.Payload.BetDataSet;
-		if (request.Payload.BetDataSet.Length == 0)
+		if (request.Payload.BetDataSet.Length == 0 || string.IsNullOrEmpty(request.Payload.WalletSideToken))
 		{
 			return ErrorMapper.ParameterIncorrect;
 		}
 		var bet = bets.First();
-
-		if (IsFreeBet(bet))
-		{
-			return ErrorMapper.Success;
-		}
 
 		var gameProviderCode = request.Payload.GameProviderCode;
 		var playerInfo = await playerRepository.GetPlayerInfoByPlayerCodeAsync(request.Payload.OperatorCustId.ToPlayerCode());
@@ -93,20 +83,6 @@ public class PlaceBetAndSettleHandler(
 		return ErrorMapper.Success;
 	}
 
-	private bool IsFreeBet(PlaceBetAndSettleDataSet bet)
-	{
-		var freeBetKey = "FreeBet";
-		var freeSpinKey = "FreeSpin";
-		if (bet.ActualStake == 0 && bet.OtherBetInfo != null)
-		{
-			var isFreeBet = bet.OtherBetInfo.ContainsKey(freeBetKey) && bet.OtherBetInfo[freeBetKey].ToLowerInvariant() == "true";
-			var isFreeSpin = bet.OtherBetInfo.ContainsKey(freeSpinKey) && bet.OtherBetInfo[freeSpinKey].ToLowerInvariant() == "true";
-
-			return isFreeBet || isFreeSpin;
-		}
-		return false;
-	}
-
 	private async Task<PlaceBetAndSettleResult> ProcessBetAsync(
 		PlaceBetAndSettleRequest request,
 		PlaceBetAndSettleDataSet bet,
@@ -118,57 +94,36 @@ public class PlaceBetAndSettleHandler(
 		var refId = bet.TicketNo;
 		var playerCode = request.Payload.OperatorCustId.ToPlayerCode();
 
-		var isExistTicket = await IsExistTicketAsync(request);
-
-		if (!isExistTicket && adjustAmount < 0)
-		{
-			balanceResponse = await cashServiceClient.GameProviderDeductBalanceAsync(
-				playerCode,
-				Math.Abs(adjustAmount),
-				new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, ActionConstants.PlaceBetAndSettle),
-				cancellationToken: cancellationToken);
-
-			if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
-			{
-				return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(balanceResponse.ErrorCode, balanceResponse.ErrorMessage);
-			}
-		}
-
 		var (criteria, spResult) = await InsertBetTransAsync(request, bet);
-		var isFailedSp = !ErrorMapper.IsSuccess(spResult?.StatusCode ?? "0");
-
-		if (!isExistTicket && IsAddBalance(adjustAmount, isFailedSp))
+		if (!ErrorMapper.IsSuccess(spResult.StatusCode))
 		{
-			var action = isFailedSp ? ActionConstants.PlaceBetAndSettleFail : ActionConstants.PlaceBetAndSettle;
-
-			balanceResponse = await cashServiceClient.GameProviderAddBalanceAsync(
-				playerCode,
-				Math.Abs(adjustAmount),
-				new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, action),
-				cancellationToken: cancellationToken);
-
-			if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
-			{
-				return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(balanceResponse.ErrorCode, balanceResponse.ErrorMessage);
-			}
+			return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(spResult.StatusCode, spResult.ErrMsg);
 		}
-
-		if (isFailedSp)
+		if (adjustAmount == 0)
 		{
-			return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(spResult.StatusCode, spResult?.ErrMsg ?? string.Empty);
+			balanceResponse = await cashServiceClient.GameProviderGetBalanceAsync(playerCode, cancellationToken);
 		}
-
-		var balance = balanceResponse?.Balance ?? currentBalance;
-
+		else
+		{
+			balanceResponse = await cashServiceClient.GameProviderAdjustBalanceByActionAsync(
+			playerCode,
+			adjustAmount,
+			new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, ActionConstants.PlaceBetAndSettle),
+			false,
+			string.Empty,
+			cancellationToken);
+		}
+		if (!ErrorMapper.IsSuccess(balanceResponse.ErrorCode))
+		{
+			return ResultHelper.GenerateFailedResult<PlaceBetAndSettleResult, PlaceBetAndSettlePayload>(balanceResponse.ErrorCode, balanceResponse.ErrorMessage);
+		}
 		await messagePublisher.HandleBetAsync(HandleMessageMapper.PlaceBetAndSettle(criteria, spResult?.RefNo ?? 0), cancellationToken);
 
-		return GenerateSuccessResult(request, bet, spResult, balance);
-	}
-
-	private async Task<bool> IsExistTicketAsync(PlaceBetAndSettleRequest request)
-	{
-		return await cashServiceClient.IsExistGameProviderTransactionLogAsync(request.Payload.OperatorCustId.ToPlayerCode(),
-			new ProviderInfo(request.Payload.GameProviderCode, request.Payload.BetDataSet.First().TicketNo, ActionConstants.PlaceBetAndSettle));
+		var dataSets = new PlaceBetAndSettleResultDataSet { RefNo = spResult.RefNo.ToString(), TicketNo = bet.TicketNo };
+		return new PlaceBetAndSettleResult
+		{
+			Payload = new PlaceBetAndSettlePayload(request.Payload.OperatorCustId, balanceResponse.Balance, [dataSets])
+		};
 	}
 
 	private async Task<(PlaceBetAndSettleCriteria, SPResult)> InsertBetTransAsync(PlaceBetAndSettleRequest request, PlaceBetAndSettleDataSet bet)
@@ -189,27 +144,6 @@ public class PlaceBetAndSettleHandler(
 
 		return adjustAmount;
 	}
-
-	private static PlaceBetAndSettleResult GenerateSuccessResult(
-		PlaceBetAndSettleRequest request,
-		PlaceBetAndSettleDataSet bet,
-		SPResult spResult,
-		decimal balance)
-	{
-		var refNo = spResult.RefNo.ToString();
-		var dataSets = new PlaceBetAndSettleResultDataSet { RefNo = refNo, TicketNo = bet.TicketNo };
-		var res = new PlaceBetAndSettleResult
-		{
-			Payload = new PlaceBetAndSettlePayload(request.Payload.OperatorCustId, balance, [dataSets])
-		};
-
-		return res;
-	}
-
-	private static bool IsAddBalance(decimal adjustAmount, bool failedSp)
-		=> ShouldRefund(adjustAmount, failedSp) || adjustAmount > 0;
-
-	private static bool ShouldRefund(decimal adjustAmount, bool failedSp) => failedSp && adjustAmount < 0;
 
 	private PlaceBetAndSettleCriteria ConvertToCriteria(
 		string TimeStamp,
