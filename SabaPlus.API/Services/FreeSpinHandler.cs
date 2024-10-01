@@ -25,9 +25,6 @@ public class FreeSpinHandler(
 	{
 		try
 		{
-			//TODO - for security, it should check if player is playing game in our system!!!
-			// => some kind of last bet as re-checkin monitoring
-
 			var gameProviderCode = await gameProviderRepository.GetGameProviderCodeByGameTypeAsync(request.Payload.GameType);
 
 			if (string.IsNullOrWhiteSpace(gameProviderCode))
@@ -78,7 +75,7 @@ public class FreeSpinHandler(
 				0);
 		}
 
-		var balanceResult = await AddBalanceAsync(request, gameProviderCode, cancellationToken);
+		var balanceResult = await AddOrGetBalanceAsync(request, gameProviderCode, cancellationToken);
 
 		if (!ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 		{
@@ -122,7 +119,7 @@ public class FreeSpinHandler(
 		return criteria;
 	}
 
-	private async ValueTask<BalanceResponse> AddBalanceAsync(FreeSpinRequest request, string gameProviderCode, CancellationToken cancellationToken)
+	private async ValueTask<BalanceResponse> AddOrGetBalanceAsync(FreeSpinRequest request, string gameProviderCode, CancellationToken cancellationToken)
 	{
 		var bet = request.Payload.BetDataSet.First();
 		var amount = bet.Payout;
