@@ -75,7 +75,7 @@ public class VoidGameHandler(
 		}
 
 		var balanceResult = await AdjustBalanceAsync(request, ticket.TicketNo, gameProviderCode, adjustBalanceResult.BalanceAdjust, cancellationToken);
-		if (ErrorMapper.IsSuccess(balanceResult.ErrorCode))
+		if (ErrorMapper.IsSuccess(balanceResult.ErrorCode) || ErrorMapper.IsDulicateTransactionByAction(balanceResult.ErrorCode))
 		{
 			await messagePublisher.HandleBetAsync(HandleMessageMapper.VoidGame(criteria), cancellationToken);
 		}
