@@ -38,6 +38,7 @@ public static class ErrorMapper
 		[InsufficientFunds] = "Player has insufficient funds",
 		[PlayerExceededGameLimit] = "The player exceeded their game limit",
 		[DuplicateTransaction] = "Duplicate Transaction",
+		[NoSuchTicket] = "No Such Ticket",
 		[InvalidVendor] = "The Vendor Id is invalid"
 	};
 
