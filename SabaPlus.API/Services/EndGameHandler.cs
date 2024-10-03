@@ -95,7 +95,7 @@ public class EndGameHandler(
 		{
 			action = isResettle.ToLowerInvariant() == "true" ? ActionConstants.Resettle : ActionConstants.EndGame;
 		}
-		return await cashClient.GameProviderAdjustBalanceByActionAsync(
+		return await cashClient.GameProviderAddOrDeductBalanceByActionAsync(
 			playerCode,
 			adjustAmount,
 			new Tgs.CashService.ProviderInfo(gameProviderCode, ticket.TicketNo, seq, action));

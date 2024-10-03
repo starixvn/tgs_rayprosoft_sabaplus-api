@@ -105,7 +105,7 @@ public class PlaceBetAndSettleHandler(
 		}
 		else
 		{
-			balanceResponse = await cashServiceClient.GameProviderAdjustBalanceByActionAsync(
+			balanceResponse = await cashServiceClient.GameProviderAddOrDeductBalanceByActionAsync(
 			playerCode,
 			adjustAmount,
 			new ProviderInfo(request.Payload.GameProviderCode, refId, request.Seq, ActionConstants.PlaceBetAndSettle),
