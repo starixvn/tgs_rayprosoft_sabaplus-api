@@ -20,7 +20,7 @@ public static class HandleMessageMapper
 		};
 	}
 
-	public static HandleBetMessage EndGame(EndGameCriteria criteria)
+	public static HandleBetMessage EndGame(EndGameCriteria criteria, long refNo)
 	{
 		return new HandleBetMessage()
 		{
@@ -29,6 +29,7 @@ public static class HandleMessageMapper
 			Action = "Settle",
 			PlayerCode = criteria.OperatorCustId.ToPlayerCode(),
 			TxId = criteria.TicketNo,
+			RefId = refNo.ToString(),
 			Payout = criteria.Payout,
 			WinlostDate = criteria.SettleDate,
 			ExtraStatus = ActionConstants.EndGame,
@@ -45,6 +46,7 @@ public static class HandleMessageMapper
 			PlayerCode = criteria.OperatorCustId.ToPlayerCode(),
 			TxId = criteria.TicketNo,
 			LicenseeTxid = refNo,
+			RefId = refNo.ToString(),
 			Payout = criteria.Payout,
 			WinlostDate = criteria.SettleDate,
 			ExtraStatus = ActionConstants.PlaceBetAndSettle,
@@ -62,6 +64,7 @@ public static class HandleMessageMapper
 			PlayerCode = criteria.OperatorCustId.ToPlayerCode(),
 			TxId = criteria.TicketNo,
 			LicenseeTxid = refNo,
+			RefId = refNo.ToString(),
 			Payout = criteria.Payout,
 			WinlostDate = criteria.SettleDate,
 			ExtraStatus = ActionConstants.FreeSpin,
@@ -79,6 +82,7 @@ public static class HandleMessageMapper
 			PlayerCode = criteria.OperatorCustId.ToPlayerCode(),
 			TxId = criteria.TicketNo,
 			LicenseeTxid = refNo,
+			RefId = refNo.ToString(),
 			Payout = criteria.Payout,
 			WinlostDate = criteria.SettleDate,
 			ExtraStatus = ActionConstants.Bonus,
@@ -86,7 +90,7 @@ public static class HandleMessageMapper
 		};
 	}
 
-	public static HandleBetMessage VoidGame(VoidGameCriteria criteria)
+	public static HandleBetMessage VoidGame(VoidGameCriteria criteria, long refNo)
 	{
 		return new HandleBetMessage()
 		{
@@ -95,6 +99,7 @@ public static class HandleMessageMapper
 			Action = "Settle",
 			PlayerCode = criteria.OperatorCustId.ToPlayerCode(),
 			TxId = criteria.TicketNo,
+			RefId = refNo.ToString(),
 			Payout = 0,
 			WinlostDate = criteria.SettleDate,
 			ExtraStatus = ActionConstants.VoidGame,

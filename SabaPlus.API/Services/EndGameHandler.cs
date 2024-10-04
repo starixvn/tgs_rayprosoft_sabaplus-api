@@ -74,7 +74,7 @@ public class EndGameHandler(
 		var balanceResult = await AddBalanceAsync(ticket, criteria.PlayerCode, gameProviderCode, adjustBalanceResult.BalanceAdjust, request.Seq);
 		if (ErrorMapper.IsSuccess(balanceResult.ErrorCode))
 		{
-			await messagePublisher.HandleBetAsync(HandleMessageMapper.EndGame(criteria), cancellationToken);
+			await messagePublisher.HandleBetAsync(HandleMessageMapper.EndGame(criteria, spResult.RefNo.Value), cancellationToken);
 		}
 
 		if (ErrorMapper.IsDulicateTransactionByAction(balanceResult.ErrorCode))
