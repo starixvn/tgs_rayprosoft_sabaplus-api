@@ -10,7 +10,7 @@ public record BetResultCheckData
 
 	public string GameRoundId { get; set; }
 
-	public string TransactionId { get; set; }
+	public string? TransactionId { get; set; }
 
 	public short Status { get; set; }
 
@@ -22,15 +22,15 @@ public record BetResultCheckData
 
 	public decimal Payout { get; set; }
 
-	public string SettleDate { get; set; }
+	public string? SettleDate { get; set; }
 
-	public string TransDate { get; set; }
+	public string? TransDate { get; set; }
 
-	public string GameResult { get; set; }
+	public string? GameResult { get; set; }
 
-	public decimal Odds { get; set; }
+	public decimal? Odds { get; set; }
 
-	public Dictionary<string, string> OtherBetInfo { get; set; }
+	public Dictionary<string, string>? OtherBetInfo { get; set; }
 }
 
 public record BetResultCheckFromProvider
