@@ -11,6 +11,7 @@ public static class ErrorMapper
 	public const int PlayerExceededGameLimit = 3003;
 	public const int DuplicateTransaction = 3017;
 	public const int NoSuchTicket = 3016;
+	public const int TicketHasBeenSettled = 3021;
 	public const int InvalidVendor = 1004;
 
 	private static Dictionary<string, int> InternalErrorCodes = new()
@@ -19,6 +20,7 @@ public static class ErrorMapper
 		["101"] = DuplicateTransaction,
 		["102"] = NoSuchTicket,
 		["103"] = NoSuchTicket,
+		["104"] = TicketHasBeenSettled,
 		["201"] = UnspecifiedError,
 		["202"] = DuplicateTransaction,
 		["203"] = AccountNotExist,
@@ -39,7 +41,8 @@ public static class ErrorMapper
 		[PlayerExceededGameLimit] = "The player exceeded their game limit",
 		[DuplicateTransaction] = "Duplicate Transaction",
 		[NoSuchTicket] = "No Such Ticket",
-		[InvalidVendor] = "The Vendor Id is invalid"
+		[InvalidVendor] = "The Vendor Id is invalid",
+		[TicketHasBeenSettled] = "Ticket Has Been Settled"
 	};
 
 	public static int GetErrorCode(string internalErrorCode)
