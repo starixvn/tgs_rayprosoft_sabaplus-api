@@ -14,3 +14,29 @@ publish_nuget:
 
 sonar_dotnet:
   allow_failure: true
+
+.e2e-test:
+  stage: post-deploy
+  image:
+    name: grafana/k6:latest
+    entrypoint: ['']
+  before_script: []
+  after_script: []
+  rules:
+    - if: '$ENV_NAME != "LOCAL"'
+      when: never
+    - !reference [.cd_rules, deploy_k8s]
+    - !reference [.cd_rules, deploy]
+
+e2e-smoke-test:
+  extends: .e2e-test
+  script: ["k6 run LoadTests/smoke.js"] 
+
+e2e-loadtest:
+  extends: .e2e-test
+  needs: ["e2e-smoke-test"]
+  script: ['k6 run -e RUN_MODE=DEV LoadTests/script.js']
+  artifacts:
+    paths:
+      - LoadTests/output
+    when: always
