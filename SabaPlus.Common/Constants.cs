@@ -3,5 +3,5 @@
 public record Constants
 {
 	public const string ApiLogsPublish = "saba.single.wallet.api.logs";
-	public const string HandleBetPublish = "saba.single.wallet.api.handle.bet";
+	public const string HandleBetPublish = "sabaplus.api.handle.bet";
 }
