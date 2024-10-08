@@ -35,9 +35,9 @@ public class GetPlayerInfoHandler(
 					ErrorMapper.AccountNotExist,
 					ErrorMapper.GetErrorMessage(ErrorMapper.AccountNotExist));
 			}
-			var gameProviderCurrencyCode = await gameProviderRepository.GetCurrencyCodeAsync(gameProviderCode, playerInfo.CurrencyCode);
-			var gameProviderBetLimit = await gameProviderRepository.GetBetLimitAsync(gameProviderCode, playerInfo.CurrencyCode);
-			var brandBetLimit = await playerRepository.GetBrandBetLimitAsync(playerInfo.BrandId, playerInfo.CurrencyCode);
+			var gameProviderCurrencyCode = await gameProviderRepository.GetCurrencyCodeAsync(gameProviderCode, playerInfo.CurrencyCode).ConfigureAwait(false);
+			var gameProviderBetLimit = await gameProviderRepository.GetBetLimitAsync(gameProviderCode, playerInfo.CurrencyCode).ConfigureAwait(false);
+			var brandBetLimit = await playerRepository.GetBrandBetLimitAsync(playerInfo.BrandId, playerInfo.CurrencyCode).ConfigureAwait(false);
 			var res = new GetPlayerInfoResult()
 			{
 				Payload = new GetPlayerInfoResponsePayload
