@@ -1,5 +1,4 @@
-﻿using System.Net.Sockets;
-using AutoMapper;
+﻿using AutoMapper;
 using MediatR;
 using SabaPlus.API.Messages;
 using SabaPlus.API.Models;
@@ -58,17 +57,17 @@ public class EndGameHandler(
 		string gameProviderCode,
 		CancellationToken cancellationToken)
 	{
-		var adjustBalanceResult = await GetAdjustBalanceAsync(ticket, request.Payload.OperatorCustId, request.Payload.GameType);
-		if (!ErrorMapper.IsSuccess(adjustBalanceResult.StatusCode))
-		{
-			return new BalanceResponse { Balance = 0, ErrorCode = adjustBalanceResult.StatusCode, ErrorMessage = adjustBalanceResult.ErrMsg };
-		}
-
 		var criteria = GetEndGameCriteria(request, ticket, gameProviderCode);
 		var spResult = await gameProviderRepository.CallStoredProcedureAsync<EndGameCriteria, SPResult>(criteria, StoreProcedureMapper.InsertSignalSP);
 		if (!ErrorMapper.IsSuccess(spResult.StatusCode))
 		{
 			return new BalanceResponse { Balance = 0, ErrorCode = spResult.StatusCode, ErrorMessage = spResult.ErrMsg };
+		}
+
+		var adjustBalanceResult = await GetAdjustBalanceAsync(ticket, request.Payload.OperatorCustId, request.Payload.GameType, spResult.RefNo);
+		if (!ErrorMapper.IsSuccess(adjustBalanceResult.StatusCode))
+		{
+			return new BalanceResponse { Balance = 0, ErrorCode = adjustBalanceResult.StatusCode, ErrorMessage = adjustBalanceResult.ErrMsg };
 		}
 
 		var balanceResult = await AddBalanceAsync(ticket, criteria.PlayerCode, gameProviderCode, adjustBalanceResult.BalanceAdjust, request.Seq);
@@ -108,12 +107,13 @@ public class EndGameHandler(
 			new Tgs.CashService.ProviderInfo(gameProviderCode, ticket.TicketNo, seq, action));
 	}
 
-	private async ValueTask<GetAdjustBalanceTicketSPResult> GetAdjustBalanceAsync(EndGameDataSet ticket, string operatorCustId, string gameType)
+	private async ValueTask<GetAdjustBalanceTicketSPResult> GetAdjustBalanceAsync(EndGameDataSet ticket, string operatorCustId, string gameType, long? refNo)
 	{
 		var criteria = mapper.Map<GetAdjustBalanceTicketCriteria>(ticket);
 		criteria.GroupAction = "settle";
 		criteria.OperatorCustId = operatorCustId;
 		criteria.GameType = gameType;
+		criteria.RefNo = refNo;
 		return await gameProviderRepository.CallStoredProcedureAsync<GetAdjustBalanceTicketCriteria, GetAdjustBalanceTicketSPResult>(criteria, StoreProcedureMapper.GetAdjustBalanceTicketSP);
 	}
 

@@ -61,17 +61,17 @@ public class VoidGameHandler(
 		string gameProviderCode,
 		CancellationToken cancellationToken)
 	{
-		var adjustBalanceResult = await GetAdjustBalanceAsync(ticket.TicketNo, request.Payload.OperatorCustId, request.Payload.GameType);
-		if (!ErrorMapper.IsSuccess(adjustBalanceResult.StatusCode))
-		{
-			return new BalanceResponse { Balance = 0, ErrorCode = adjustBalanceResult.StatusCode, ErrorMessage = adjustBalanceResult.ErrMsg };
-		}
-
 		var criteria = GetCriteria(request, ticket, gameProviderCode);
 		var sp = await gameProviderRepository.CallStoredProcedureAsync<VoidGameCriteria, SPResult>(criteria, StoreProcedureMapper.InsertSignalSP);
 		if (!ErrorMapper.IsSuccess(sp.StatusCode))
 		{
 			return new BalanceResponse { Balance = 0, ErrorCode = sp.StatusCode, ErrorMessage = sp.ErrMsg };
+		}
+
+		var adjustBalanceResult = await GetAdjustBalanceAsync(ticket.TicketNo, request.Payload.OperatorCustId, request.Payload.GameType, sp.RefNo);
+		if (!ErrorMapper.IsSuccess(adjustBalanceResult.StatusCode))
+		{
+			return new BalanceResponse { Balance = 0, ErrorCode = adjustBalanceResult.StatusCode, ErrorMessage = adjustBalanceResult.ErrMsg };
 		}
 
 		var balanceResult = await AdjustBalanceAsync(request, ticket.TicketNo, gameProviderCode, adjustBalanceResult.BalanceAdjust, cancellationToken);
@@ -108,14 +108,15 @@ public class VoidGameHandler(
 				cancellationToken);
 	}
 
-	private async Task<GetAdjustBalanceTicketSPResult?> GetAdjustBalanceAsync(string ticketNo, string operatorCustId, string gameType)
+	private async Task<GetAdjustBalanceTicketSPResult?> GetAdjustBalanceAsync(string ticketNo, string operatorCustId, string gameType, long? refNo)
 	{
 		var criteria = new GetAdjustBalanceTicketCriteria()
 		{
 			TicketNo = ticketNo,
 			OperatorCustId = operatorCustId,
 			GroupAction = "void",
-			GameType = gameType
+			GameType = gameType,
+			RefNo = refNo
 		};
 		return await gameProviderRepository
 			.CallStoredProcedureAsync<GetAdjustBalanceTicketCriteria, GetAdjustBalanceTicketSPResult?>(criteria, StoreProcedureMapper.GetAdjustBalanceTicketSP)

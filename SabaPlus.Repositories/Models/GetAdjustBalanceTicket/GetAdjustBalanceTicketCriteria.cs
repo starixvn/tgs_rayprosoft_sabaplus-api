@@ -6,6 +6,7 @@ public class GetAdjustBalanceTicketCriteria
 	public string GameType { get; set; }
 	public string TicketNo { get; set; }
 	public string GroupAction { get; set; }
+	public long? RefNo { get; set; }
 	public decimal? ActualStake { get; set; }
 	public decimal? Payout { get; set; }
 }
